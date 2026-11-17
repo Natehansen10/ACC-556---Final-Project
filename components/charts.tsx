@@ -394,9 +394,9 @@ export function StreakMeters({ rows }: { rows: Row[] }) {
 }
 
 // ------------------------------------------------------------
-// Day of week: 7 columns, Monday -> Sunday, share of all check-ins on each cap.
+// Day of week: 7 columns, Sunday -> Saturday, share of all check-ins on each cap.
 // ------------------------------------------------------------
-const WEEKDAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+const WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
 export function WeekdayColumns({ rows }: { rows: Row[] }) {
   // The SQL only returns days that have check-ins; show all seven, with 0 for the rest.

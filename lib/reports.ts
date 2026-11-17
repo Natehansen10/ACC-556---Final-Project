@@ -204,7 +204,7 @@ ORDER BY current_streak DESC, longest_streak DESC, member, goal;`,
     title: "Day of week",
     question: "Which days of the week does the family check in most?",
     explain: [
-      "GROUP BY the day of the week (ISODOW: Monday = 1 ... Sunday = 7) counts check-ins per weekday.",
+      "GROUP BY the day of the week (DOW: Sunday = 0 ... Saturday = 6) counts check-ins per weekday, and ORDER BY the same number lists Sunday first.",
       "COUNT(DISTINCT g.user_id) counts how many different people checked in on that weekday.",
       "SUM(COUNT(*)) OVER () is a window over the grouped rows: the total of all weekdays, so each day's share = its count / that total.",
     ],
@@ -224,8 +224,8 @@ JOIN public.goals g    ON g.id = c.goal_id
 JOIN public.profiles p ON p.id = g.user_id
 WHERE p.family_id = $1
   AND ($2::uuid IS NULL OR p.id = $2::uuid)
-GROUP BY EXTRACT(ISODOW FROM c.checkin_date), to_char(c.checkin_date, 'FMDay')
-ORDER BY EXTRACT(ISODOW FROM c.checkin_date);`,
+GROUP BY EXTRACT(DOW FROM c.checkin_date), to_char(c.checkin_date, 'FMDay')
+ORDER BY EXTRACT(DOW FROM c.checkin_date);`,
   },
 ];
 
