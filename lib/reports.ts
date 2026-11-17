@@ -95,7 +95,7 @@ ORDER BY month DESC, place, member;`,
     title: "Weekly",
     question: "How many check-ins did each person log each week, compared with their weekly goal?",
     explain: [
-      "weeks: generate_series makes one row per week (Monday start) for the last 6 weeks, so a week with no check-ins still shows up as 0.",
+      "this_week finds this week's Sunday (today minus EXTRACT(DOW)). weeks: generate_series makes one row per week, Sunday to Saturday, for the last 6 weeks, so a week with no check-ins still shows up as 0.",
       "CROSS JOIN pairs every week with every person; LEFT JOIN brings in their goals and that week's check-ins.",
       "weekly_goal is a correlated subquery: for each person and week, it adds up the times-per-week of the goals that were running that week.",
       "The final WHERE drops people who had no goal that week, so the table only shows people with something to track.",
@@ -108,10 +108,16 @@ ORDER BY month DESC, place, member;`,
       { key: "weekly_goal", label: "Weekly goal", format: "number" },
       { key: "pct_of_goal", label: "Of goal", format: "pct" },
     ],
-    sql: `WITH weeks AS (
-    SELECT generate_series(date_trunc('week', $3::date) - INTERVAL '5 weeks',
-                           date_trunc('week', $3::date),
+    sql: `WITH this_week AS (
+    -- Weeks start on Sunday. EXTRACT(DOW) is 0 on Sunday ... 6 on Saturday,
+    -- so today minus DOW days = this week's Sunday.
+    SELECT $3::date - EXTRACT(DOW FROM $3::date)::int AS sunday
+),
+weeks AS (
+    SELECT generate_series((t.sunday - 35)::timestamp,
+                           t.sunday::timestamp,
                            INTERVAL '1 week')::date AS week_start
+    FROM this_week t
 ),
 member_week AS (
     SELECT w.week_start,
