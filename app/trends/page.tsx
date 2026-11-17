@@ -158,9 +158,10 @@ function Cell({ value, column }: { value: unknown; column: Column }) {
   if (Number.isNaN(n)) return <>{String(value)}</>;
   if (column.format === "pct") return <>{n.toFixed(1)}%</>;
   if (column.format === "change") {
-    const sign = n > 0 ? "+" : n < 0 ? "−" : "";
-    const color = n > 0 ? "text-success-700" : n < 0 ? "text-red-700" : "text-muted";
-    return <span className={color}>{`${sign}${Math.abs(n).toFixed(1)} pts`}</span>;
+    // In words: "up 5.0" / "down 23.1" (percentage points, e.g. 70% -> 47% is down 23).
+    if (n === 0) return <span className="text-muted">same</span>;
+    const color = n > 0 ? "text-success-700" : "text-red-700";
+    return <span className={color}>{`${n > 0 ? "up" : "down"} ${Math.abs(n).toFixed(1)}`}</span>;
   }
   return <>{n.toLocaleString("en-US")}</>;
 }

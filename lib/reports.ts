@@ -40,7 +40,7 @@ export const REPORTS: Report[] = [
       "goal_month: one row per goal per month. The target comes from the view v_goal_monthly_targets; LEFT JOIN keeps goals with zero check-ins, so skipping a goal still counts against you.",
       "member_month: adds each person's goals together for each month.",
       "RANK() numbers people inside each month by completion rate. Ties share a place.",
-      "LAG() reads the same person's rate from the month before, so change = this month minus last month.",
+      "LAG() reads the same person's rate from the month before. The change is this month's % minus last month's %: 70% then 47% is \"down 23\".",
     ],
     usesToday: false,
     columns: [
@@ -50,7 +50,7 @@ export const REPORTS: Report[] = [
       { key: "target", label: "Target", format: "number" },
       { key: "completion_pct", label: "Completion", format: "pct" },
       { key: "place", label: "Place", format: "number" },
-      { key: "change_vs_last_month", label: "Change", format: "change" },
+      { key: "change_vs_last_month", label: "Vs last month", format: "change" },
     ],
     sql: `WITH goal_month AS (
     SELECT g.user_id,

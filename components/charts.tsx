@@ -104,6 +104,10 @@ export function MonthBars({ rows }: { rows: Row[] }) {
           const latest = find(person, newest);
           const latestPct = num(latest?.completion_pct);
           const change = num(latest?.change_vs_last_month);
+          // The month LAG() compared against: this person's next-older row (rows are newest first).
+          const mine = rows.filter((r) => str(r.member) === person);
+          const prev = latest && mine[0] === latest ? mine[1] : undefined;
+          const prevPct = num(prev?.completion_pct);
           return (
             <div key={person} className="grid grid-cols-[5.5rem_1fr] items-center gap-3 py-1.5">
               <span className="truncate text-sm">{person}</span>
@@ -135,13 +139,15 @@ export function MonthBars({ rows }: { rows: Row[] }) {
                   })}
                 </div>
               </div>
-              {/* Selective label: the newest month's rate and its change, under the bars. */}
+              {/* Selective label: the newest month's rate, compared in words with the month before. */}
               <span />
               <p className="-mt-1 text-xs text-muted tabular-nums">
                 {latestPct === null ? `No goals in ${newest}` : `${latestPct.toFixed(1)}% in ${newest}`}
-                {change !== null && (
+                {change !== null && prevPct !== null && (
                   <span className={change > 0 ? "text-success-700" : change < 0 ? "text-red-700" : ""}>
-                    {` · ${change > 0 ? "+" : change < 0 ? "−" : ""}${Math.abs(change).toFixed(1)} pts`}
+                    {change === 0
+                      ? `, same as ${str(prev?.month_label)}`
+                      : `, ${change > 0 ? "up" : "down"} from ${prevPct.toFixed(1)}% in ${str(prev?.month_label)}`}
                   </span>
                 )}
               </p>
