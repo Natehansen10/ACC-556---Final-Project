@@ -18,8 +18,10 @@ export function supabaseEnv() {
 }
 
 export async function createSupabase() {
-  const { url, key } = supabaseEnv();
+  // Read cookies first: that tells Next.js the page is per-request, so the
+  // build never tries to render it ahead of time without these variables.
   const cookieStore = await cookies();
+  const { url, key } = supabaseEnv();
   return createServerClient(url, key, {
     cookies: {
       getAll() {
