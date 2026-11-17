@@ -15,10 +15,14 @@ colors:
   navy-200: "#d6ebff"
   navy-100: "#eef6ff"
   done-500: "#3f8f5f"
+  done-600: "#2f7a4d"
+  faint: "#8c8d90"
+  focus: "#416180"
   done-700: "#2c6644"
   done-100: "#e3f2e8"
   error-800: "#991b1b"
-  strava-orange: "#FC4C02"
+  strava: "#c93b00"
+  strava-ink: "#b33400"
   viz-series: "#2a78d6"
   viz-track: "#cde2fb"
   viz-month-1: "#86b6ef"
@@ -53,6 +57,7 @@ rounded:
   sm: "2px"
   md: "6px"
   lg: "8px"
+  xl: "12px"
   full: "9999px"
 spacing:
   xs: "4px"
@@ -64,33 +69,38 @@ components:
   button-primary:
     backgroundColor: "{colors.navy-800}"
     textColor: "{colors.surface}"
-    rounded: "{rounded.md}"
-    padding: "8px 16px"
+    rounded: "{rounded.lg}"
+    padding: "0 16px"
+    height: "44px"
   button-primary-hover:
     backgroundColor: "{colors.navy-900}"
   button-secondary:
     backgroundColor: "{colors.surface}"
     textColor: "{colors.ink}"
-    rounded: "{rounded.md}"
-    padding: "6px 12px"
+    rounded: "{rounded.lg}"
+    padding: "0 16px"
+    height: "44px"
   card:
     backgroundColor: "{colors.surface}"
-    rounded: "{rounded.lg}"
+    rounded: "{rounded.xl}"
     padding: "16px"
-  pill:
+  segment-active:
     backgroundColor: "{colors.surface}"
     textColor: "{colors.ink}"
-    rounded: "{rounded.full}"
-    padding: "4px 12px"
-  pill-active:
-    backgroundColor: "{colors.navy-800}"
+    rounded: "{rounded.lg}"
+    height: "44px"
+  check-row:
+    backgroundColor: "{colors.surface}"
+    rounded: "{rounded.xl}"
+    height: "64px"
+  check-row-done:
+    backgroundColor: "{colors.done-100}"
+    textColor: "{colors.done-700}"
+  day-dot-done:
+    backgroundColor: "{colors.done-600}"
     textColor: "{colors.surface}"
-  check-dot:
     rounded: "{rounded.full}"
-    size: "28px"
-  check-dot-done:
-    backgroundColor: "{colors.done-500}"
-    textColor: "{colors.surface}"
+    size: "24px"
   header:
     backgroundColor: "{colors.navy-900}"
     textColor: "{colors.surface}"
@@ -98,111 +108,101 @@ components:
 
 # Design System: Family Health Tracker
 
-This file records the **incumbent** visual system as of Nov 2026, before the UI polish pass. It is the reference to preserve or deliberately change, not a target.
+This file records the visual system after the Nov 2026 UI polish pass (branch `feat/ui-polish`). Change it together with `app/globals.css` and `components/ui.tsx`.
 
 ## Overview
 
-**Creative North Star: "The Fridge Chart"** (proposed, not yet confirmed). A habit chart on the family fridge: everyone's row, one mark per day, readable from across the room. Calm, plain, honest.
+**Creative North Star: "The Fridge Chart"** (proposed). A habit chart on the family fridge: everyone's row, one mark per day, readable from across the room. Calm, plain, honest.
 
-The current interface is a neutral gray page with white cards, a dark navy header, one muted navy accent for actions, and green reserved for "done" and "won". Density is moderate. Everything is system type, small sizes, and thin borders. It reads as a clean default rather than a product with its own character: competent, quiet, and a little generic.
+A neutral gray page with white cards, a dark navy header, one navy accent for actions, and green only for "done" and "won". Checking in is the main event: each of your goals is one large button. Everything else is quieter. Mobile first, with a tab bar at the bottom on phones.
 
 **Key Characteristics:**
-- Gray page, white bordered cards with a faint shadow, one card per person or section.
-- Navy for actions and selection; green only for completion and prize winners.
-- System sans-serif everywhere; monospace only for SQL.
+- Every control is at least 44px tall; the check-in button is 64px.
+- Navy for actions and selection; green only for completion, met targets, and prizes.
+- Done = green check, missed = faint dot, today not yet = open ring. Never color alone.
+- System sans-serif everywhere; monospace only for SQL and column names.
 - Plain HTML/CSS charts with their own blue ramp, separate from the navy UI accent.
 - Light mode only.
 
 ## Colors
 
-Cool neutrals with one desaturated navy accent and one green for success.
+Cool neutrals with one desaturated navy accent and one green for success. Every text pair passes WCAG AA.
 
 ### Primary
-- **Harbor Navy** (#2c455d, ramp #1d2d3d to #eef6ff): primary buttons, active pills, focus rings, tappable check-in circle outlines (#597ea3). The header uses the deepest step (#1d2d3d).
+- **Harbor Navy** (#2c455d, ramp #1d2d3d to #eef6ff): primary buttons, active tab, check-in ring (#597ea3), links and quiet actions (#416180). The header uses the deepest step (#1d2d3d).
+- **Focus** (#416180): the 2px focus outline on every control.
 
 ### Secondary
-- **Done Green** (#3f8f5f, text #2c6644, tint #e3f2e8): completed check-ins, full progress bars, prize winner badge, positive change. Never decorative.
+- **Done Green** (fill #2f7a4d, text #2c6644, tint #e3f2e8): completed check-ins, met targets, prize winner, positive change.
 
 ### Tertiary
-- **Strava Orange** (#FC4C02): only on the Strava connect button and label, per Strava branding.
+- **Strava Orange** (#c93b00, text #b33400): darkened from the brand orange so white text passes AA. Only on Strava's own controls.
 
 ### Chart palette (Trends only)
-- **Series Blue** (#2a78d6) with **Track Blue** (#cde2fb) and an ordinal month ramp (#86b6ef, #3987e5, #1c5cab). Gridlines #e1e0d9. Validated against the white card. Text never uses series colors.
+- **Series Blue** (#2a78d6), **Track Blue** (#cde2fb with a #597ea3 outline), month ramp (#86b6ef, #3987e5, #1c5cab), gridlines #e1e0d9. Text never uses series colors.
 
 ### Neutral
-- **Ink** (#1d1f20): body text and headings.
-- **Muted Ink** (#5d5d60): secondary text, hints, metadata.
-- **Page Gray** (#f2f2f3): page background.
-- **Surface White** (#ffffff): cards and inputs.
-- **Divider** (ink at 14%): card borders, row dividers.
-- **Code Black** (neutral-900): SQL blocks, with neutral-100 text.
+- **Ink** (#1d1f20), **Muted Ink** (#5d5d60), **Faint** (#8c8d90, missed-day dots only), **Page Gray** (#f2f2f3), **Surface White** (#ffffff), **Divider** (ink at 14%), **Code Black** (neutral-900).
 
 ### Named Rules
-**The Green Means Done Rule.** Green appears only for a completed check-in, a met target, a positive change, or a prize. Never as decoration.
+**The Green Means Done Rule.** Green appears only for a completed check-in, a met target, a positive change, or a prize.
+**The No Red For Now Rule.** A month in progress is never shown as a red drop. It shows "on pace" or "behind pace" and a pace mark.
 
 ## Typography
 
-**Body Font:** system UI sans-serif stack.
-**Mono Font:** system monospace stack, for SQL only.
-
-**Character:** neutral, unbranded, legible. Hierarchy comes from weight (600 vs 400) more than size.
+**Body Font:** system UI sans-serif stack. **Mono Font:** system monospace stack, for SQL and column names only.
 
 ### Hierarchy
-- **Headline** (600, 1.5rem, tight tracking): page titles (Today, Goals, Trends).
-- **Title** (600, 1rem): card titles (person names, section titles); 1.125rem for a few section headings.
-- **Body** (400, 0.875rem): most text, form labels, list rows. Goal names are 1rem medium.
-- **Label** (400, 0.75rem; 10-11px for weekday letters and axis ticks): metadata, legends, axis labels, footer.
-- **Code** (mono, 0.75rem, relaxed leading): SQL.
+- **Headline** (600, 1.5rem, tight tracking): page titles.
+- **Title** (600, 1rem to 1.125rem): card and section titles, goal names.
+- **Body** (400, 0.875rem; 1rem in inputs on phones so iOS doesn't zoom): most text.
+- **Label** (400, 0.75rem): weekday labels, legends, axis ticks, footer. Nothing smaller than 12px.
+- **Code** (mono, 0.75rem, relaxed leading): SQL. Wraps on phones, scrolls sideways on desktop.
+
+Long text uses `text-pretty`; explanatory paragraphs cap at 60ch (about 80 characters).
 
 ## Layout
 
-Single centered column, max width 56rem (`max-w-4xl`), 16px side gutter, 24px top padding. Pages stack sections with 20px gaps. Cards pad 16px (20px from `sm`). On phones, rows stack vertically; from `sm` (640px) goal rows put the title left and the 7-day circles right. The header wraps to two or three lines on phones.
+Single centered column, max width 56rem, 16px side gutter. Sections stack with 24px gaps. Phones get a fixed bottom tab bar (64px plus the safe-area inset); from 640px the four pages move into the header. Family lists are one card with dividers, never a card per person.
 
 ## Elevation & Depth
 
-Mostly flat. Cards use a 1px divider border plus Tailwind's `shadow-sm`. Tooltips use `shadow-md`. Depth otherwise comes from the gray page against white cards.
+Flat. Cards: 1px divider border plus a 1px-offset, 2px-blur shadow at 5%. Tooltips: 4px offset, 12px blur. The active segment gets a light lift. No nested cards.
 
 ## Shapes
 
-Soft rectangles: 6px radius on buttons and inputs, 8px on cards, full rounding on pills, check-in circles, place badges, and progress bars. Bars in charts round only their leading end.
+8px radius on buttons, inputs, and segments; 12px on cards and the check-in button; full rounding on day dots, place badges, progress bars, and the tab bar's active pill.
 
 ## Components
 
+### Check-in button (CheckRow)
+- One per goal on Today. 64px tall, full width. 40px circle on the left, title and frequency in the middle, "Tap when done" or "Done / tap to undo" on the right.
+- Flips the moment it is tapped (optimistic), then the check lands with a 420ms ease-out "pop". The pop never plays on page load and is off under reduced motion.
+- `aria-pressed` carries the state.
+
+### Day dots
+- Seven columns, weekday label above (today labeled "Today"). Done: 24px green circle with a check. Today not yet: open navy ring. Missed: faint 8px dot. Not running: blank. Each day has screen-reader text.
+
 ### Buttons
-- **Shape:** 6px radius.
-- **Primary:** Harbor Navy fill, white text, 8px 16px padding, 14px medium.
-- **Hover:** one step darker navy. Disabled: 60% opacity.
-- **Secondary:** white with divider border, ink text, 6px 12px padding; hover neutral-100.
+- **Primary:** navy fill, white text, 44px tall. **Secondary:** white with a gray border. **Quiet:** navy text only, still 44px tall (e.g. "Mark yesterday done").
 
-### Pills (PillNav)
-- Report, person, and month pickers. Full rounding, 4px 12px padding, 14px. Active: navy fill, white text, `aria-current="page"`.
+### Segmented switcher (SegmentedNav)
+- Report and month pickers. Gray track, white active segment with `aria-current`. Links, so every view is a shareable URL.
 
-### Cards
-- White, 8px radius, divider border, `shadow-sm`, 16-20px padding. One per person on Today and Goals.
-
-### Inputs
-- White, divider border, 6px radius, 8px 12px padding, 14px text. Focus: navy-600 border plus navy-200 2px ring.
-
-### Check-in circle (CheckDot / Dot)
-- 28px circle. Done: green fill with a white check. Tappable and not done: navy-600 outline, white fill. Read-only not done: neutral-300 outline. Goal not running: short gray dash. Two-letter weekday label above.
+### Disclosure
+- Every `<details>` uses the same 44px summary with a chevron that turns when open.
 
 ### Progress bar
-- 8px tall, fully rounded, neutral-200 track; navy-600 fill, green when at or above 100%.
-
-### Alert
-- Small bordered box. Success: green tint. Error: red-50 with red-800 text. `role="status"` or `role="alert"`.
-
-### Empty state
-- Dashed divider border, centered title, muted description, optional action button.
+- 10px tall, fully rounded. Navy fill, green at 100%. Optional pace mark: a thin dark line at "complete days ÷ days in the month".
 
 ### Charts (Trends)
-- Plain HTML/CSS bars. Each mark is focusable (`tabIndex=0`) with a CSS tooltip on hover and focus. Legend above, axis ticks below. Same rows are available in a "Show as table" disclosure, and the exact SQL is shown in a dark code block below.
+- Plain HTML/CSS bars, no browser JavaScript. Every mark is a 44px focusable target with a tooltip on hover, tap, and keyboard focus. The tooltip names the SQL column(s) behind the number. Under each chart: one sentence mapping marks to columns, then the query's steps, then the rows as a table, then the full SQL card.
 
 ## Do's and Don'ts
 
-- **Do** keep green for completion only.
-- **Do** keep every chart readable without its tooltip, and keep the table and SQL one tap away.
-- **Do** keep tap targets at least 44px on phones (the 28px check-in circle currently fails this).
-- **Don't** add a chart, component, or animation library.
-- **Don't** nest bordered cards inside cards (the Weekly report's per-person boxes currently do).
-- **Don't** convey state by color alone.
+- **Do** keep every control at least 44px tall and every label at least 12px.
+- **Do** keep green for completion only, and never show a month in progress as a decline.
+- **Do** keep the table and the exact SQL one tap away on Trends.
+- **Don't** add a chart, component, icon, or animation library. Icons are inline SVG on a 24px grid, 1.75 stroke.
+- **Don't** nest cards, or use unicode glyphs as icons.
+- **Don't** add more motion than the check-in pop and simple color transitions.

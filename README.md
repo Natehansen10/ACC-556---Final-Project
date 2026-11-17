@@ -14,10 +14,10 @@ ranked by completion rate, and award the month's prize to the top member(s). Tie
 
 | Screen | What it shows | What you do there |
 | --- | --- | --- |
-| **Today** (`/`) | Every family member, every goal, the last 7 days: filled = done. | Tap your own circle for today or yesterday to check in (tap again to undo), or use "Done today" with a note. |
+| **Today** (`/`) | Your goals first, then every family member's last 7 days: check = done, faint dot = missed. | Tap one of your goals when it's done (tap again to undo). "Mark yesterday done" and "Add a note" sit under each goal. |
 | **Goals** (`/goals`) | Your goals first, then each family member's, with this month's progress. | Add a goal, end one, or delete one that has no check-ins. |
 | **Leaderboard** (`/leaderboard`) | The win condition: everyone ranked by completion rate for a month. | A family admin awards the prize once the month is over. |
-| **Trends** (`/trends`) | Four reports, each as a chart (hover or tab to a bar for its numbers), the table of rows the SQL returned, and the exact SQL that built it: month over month, weekly, streaks, day of week. | Pick a report and a person (or everyone). |
+| **Trends** (`/trends`) | Four reports, each as a chart (hover, tap, or tab to a bar for its numbers and the SQL column behind them), the steps of the query, the table of rows the SQL returned, and the exact SQL that built it: month over month, weekly, streaks, day of week. The month in progress shows "on pace / behind pace". | Pick a report and a person (or everyone). |
 
 Plus **Sign in** (`/login`). There is no public sign-up: the admin creates accounts.
 
@@ -130,7 +130,7 @@ Record signed in as yourself.
 2. **Show the database connection** (15s). Point at the live footer count, then show the
    `checkins` table in the Supabase Table Editor.
 3. **Win condition** (60 to 90s):
-   - Today: every family member's last 7 days. Tap today's circle on one of your goals: it fills in
+   - Today: every family member's last 7 days. Tap one of your goals: it turns green with a check
      and the footer count goes up by one.
    - Goals: your goals first, then everyone else's, with this month's progress.
    - Leaderboard: the family ranked by completion rate for November, live. The first prize can be
@@ -174,7 +174,7 @@ automatically ("Run" goals count Strava runs, "Daily walk" counts walks).
 
 | Rule | Why |
 | --- | --- |
-| Your Strava activities (name, distance, time) are shown only to you. The family sees only the check-in circle. | Strava's API terms: a person's Strava data may only be shown to that person. |
+| Your Strava activities (name, distance, time) are shown only to you. The family sees only the check-in. | Strava's API terms: a person's Strava data may only be shown to that person. |
 | `Run` also matches TrailRun and VirtualRun; `Ride` matches VirtualRide, GravelRide, and so on (`sport_type LIKE '%' \|\| goal type`). | Strava has many variants of the same sport. |
 | One activity checks in one goal, once (`UNIQUE strava_activity_id`). One check-in per goal per day still holds. | No double counting. |
 | Strava can fill in any day this month, not just today or yesterday. | An activity is proof, so a missed day can count. |
