@@ -12,11 +12,11 @@ export default async function SetupPage() {
   return (
     <div className="mx-auto max-w-md py-8">
       <Card>
-        <h1 className="text-lg font-semibold">Almost there</h1>
+        <h1 className="text-xl font-semibold tracking-tight">Almost there</h1>
         <p className="mt-2 text-sm text-muted">
           You&apos;re signed in as <span className="font-medium text-foreground">{user.email}</span>,
-          but you haven&apos;t been added to a family yet. Ask the family admin to add you, then
-          refresh this page.
+          but you haven&apos;t been added to a family yet. Ask the family admin (Nate) to add you,
+          then refresh this page.
         </p>
         <form action={signOut} className="mt-4">
           <button type="submit" className={secondaryButtonClass}>
