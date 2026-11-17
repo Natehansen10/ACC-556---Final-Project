@@ -6,7 +6,7 @@ export default function LoginPage() {
   return (
     <div className="mx-auto flex max-w-sm flex-col gap-5 py-6 sm:py-10">
       <div className="text-center">
-        <h1 className="text-2xl font-semibold tracking-tight">Welcome back</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Sign in</h1>
         <p className="mt-1 text-sm text-muted text-pretty">
           Sign in to check in on your goals and see how the family is doing.
         </p>

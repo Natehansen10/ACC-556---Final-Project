@@ -122,7 +122,7 @@ function GoalList({
                   </span>
                 )}
               </p>
-              <p className="text-sm text-muted">
+              <p className="text-sm text-muted text-pretty">
                 {g.frequency_per_week === 7 ? "Every day" : `${g.frequency_per_week}× a week`}
                 {g.category && ` · ${g.category}`}
                 {g.unit && ` · ${g.unit}`}

@@ -205,7 +205,7 @@ export default async function LeaderboardPage({
 
       <Card>
         <SectionTitle>How this is calculated</SectionTitle>
-        <ul className="list-disc space-y-1 pl-5 text-sm text-muted">
+        <ul className="max-w-[60ch] list-disc space-y-1 pl-5 text-sm text-muted text-pretty">
           <li>
             Monthly target = times per week × days in the month ÷ 7, rounded. The view{" "}
             <code className="font-mono text-foreground">v_goal_monthly_targets</code> calculates it from

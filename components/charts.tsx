@@ -414,8 +414,14 @@ export function WeekdayColumns({ rows }: { rows: Row[] }) {
   return (
     <div>
       <p className="mb-4 text-sm text-pretty">
-        Most check-ins land on <span className="font-semibold">{best.day}</span> ({best.share.toFixed(0)}%), the fewest on{" "}
-        <span className="font-semibold">{worst.day}</span> ({worst.share.toFixed(0)}%).
+        {best.share - worst.share < 3 ? (
+          <>Check-ins are spread evenly across the week: every day is within 3 points of the others.</>
+        ) : (
+          <>
+            Most check-ins land on <span className="font-semibold">{best.day}</span> ({best.share.toFixed(0)}%),
+            the fewest on <span className="font-semibold">{worst.day}</span> ({worst.share.toFixed(0)}%).
+          </>
+        )}
       </p>
       <div className="relative" style={{ height: PLOT + 20 }}>
         <span className="absolute inset-x-0 h-px" style={{ bottom: 0, background: "var(--viz-grid)" }} />

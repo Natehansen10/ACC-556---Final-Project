@@ -55,7 +55,7 @@ export default async function TrendsPage({
         Four reports. Each one is a single SQL query, shown in full at the bottom.
       </PageHeader>
 
-      <div className="flex flex-col gap-3">
+      <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_16rem] md:items-end">
         <SegmentedNav
           label="Report"
           columns={4}
@@ -65,7 +65,7 @@ export default async function TrendsPage({
             active: r.key === report.key,
           }))}
         />
-        <div className="sm:max-w-xs">
+        <div>
           <PersonSelect
             report={report.key}
             value={member?.id ?? ""}
@@ -88,10 +88,10 @@ export default async function TrendsPage({
               {rows.length} row{rows.length === 1 ? "" : "s"} · {ms} ms
             </p>
           </div>
-          <p className="mt-1 text-sm text-muted text-pretty">{report.question}</p>
+          <p className="mt-1 max-w-[60ch] text-sm text-muted text-pretty">{report.question}</p>
           {report.chart === "monthBars" && rows.length > 0 && (
-            <p className="mt-2 text-sm text-pretty">
-              {progress.label} is in progress. Its rate counts against the whole month&apos;s target, so it
+            <p className="mt-2 max-w-[60ch] text-sm text-pretty">
+              {progress.label}{" "}is in progress. Its rate counts against the whole month&apos;s target, so it
               climbs as the month goes on. The dark mark is where an on-track rate would be after{" "}
               {progress.day} of {progress.daysInMonth} days.
             </p>
@@ -113,8 +113,8 @@ export default async function TrendsPage({
 
             <div className="mt-5 border-t border-divider pt-4">
               <h3 className="text-sm font-semibold">How the SQL builds this chart</h3>
-              <p className="mt-1 text-sm text-pretty">{CHART_KEY[report.chart]}</p>
-              <ol className="mt-2 list-decimal space-y-1 pl-5 text-sm text-muted marker:text-muted">
+              <p className="mt-1 max-w-[60ch] text-sm text-pretty">{CHART_KEY[report.chart]}</p>
+              <ol className="mt-2 max-w-[60ch] list-decimal space-y-1 pl-5 text-sm text-muted marker:text-muted">
                 {report.explain.map((line) => (
                   <li key={line} className="text-pretty">
                     {line}
