@@ -8,6 +8,16 @@
   --muted: #5d5d60;
   --surface: #ffffff;
   --divider: color-mix(in srgb, #1d1f20 14%, transparent);
+
+  /* Trends charts. Checked with the dataviz palette validator against the white card:
+     one series hue, its lighter track step, and an ordinal (oldest -> newest) month ramp. */
+  --viz-1: #2a78d6;
+  --viz-track: #cde2fb;
+  --viz-month-1: #86b6ef;
+  --viz-month-2: #3987e5;
+  --viz-month-3: #1c5cab;
+  --viz-grid: #e1e0d9;
+  --viz-ink: #1d1f20;
 }
 
 @theme inline {

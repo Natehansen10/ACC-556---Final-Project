@@ -17,8 +17,11 @@ export type Column = {
   format?: "pct" | "change" | "number" | "text";
 };
 
+export type ChartKind = "monthBars" | "weeklyMultiples" | "streakMeters" | "weekdayColumns";
+
 export type Report = {
   key: string;
+  chart: ChartKind;
   title: string;
   question: string; // the question the table answers
   explain: string[]; // how the SQL works, in plain words
@@ -30,6 +33,7 @@ export type Report = {
 export const REPORTS: Report[] = [
   {
     key: "monthly",
+    chart: "monthBars",
     title: "Month over month",
     question: "How did each person do each month, where did they place, and did they improve?",
     explain: [
@@ -87,6 +91,7 @@ ORDER BY month DESC, place, member;`,
   },
   {
     key: "weekly",
+    chart: "weeklyMultiples",
     title: "Weekly",
     question: "How many check-ins did each person log each week, compared with their weekly goal?",
     explain: [
@@ -128,7 +133,7 @@ member_week AS (
       AND ($2::uuid IS NULL OR p.id = $2::uuid)
     GROUP BY w.week_start, p.id, p.full_name
 )
-SELECT to_char(week_start, 'Mon DD') AS week_of,
+SELECT to_char(week_start, 'Mon FMDD') AS week_of,
        full_name                     AS member,
        checkins,
        weekly_goal,
@@ -139,6 +144,7 @@ ORDER BY week_start DESC, member;`,
   },
   {
     key: "streaks",
+    chart: "streakMeters",
     title: "Streaks",
     question: "What is each goal's current run of days in a row, and its longest ever?",
     explain: [
@@ -188,6 +194,7 @@ ORDER BY current_streak DESC, longest_streak DESC, member, goal;`,
   },
   {
     key: "weekday",
+    chart: "weekdayColumns",
     title: "Day of week",
     question: "Which days of the week does the family check in most?",
     explain: [

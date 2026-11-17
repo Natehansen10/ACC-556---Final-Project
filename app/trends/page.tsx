@@ -1,7 +1,8 @@
+import { MonthBars, StreakMeters, WeekdayColumns, WeeklyMultiples } from "@/components/charts";
 import { Card, EmptyState, PillNav, SectionTitle } from "@/components/ui";
 import { requireMember } from "@/lib/auth";
 import { getFamilyMembers } from "@/lib/queries";
-import { REPORTS, findReport, runReport, type Column } from "@/lib/reports";
+import { REPORTS, findReport, runReport, type ChartKind, type Column } from "@/lib/reports";
 
 // Trends: pick a report and a person. Each report is one SQL query (lib/reports.ts);
 // the page shows the result table and, below it, the exact SQL that produced it.
@@ -28,7 +29,7 @@ export default async function TrendsPage({
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Trends</h1>
         <p className="mt-1 text-sm text-muted">
-          Pick a report and a person. Each report is one SQL query; it&apos;s shown under the table.
+          Pick a report and a person. Each chart is drawn from one SQL query, shown at the bottom. Hover or tab to a bar for its numbers.
         </p>
       </div>
 
@@ -68,36 +69,44 @@ export default async function TrendsPage({
             }
           />
         ) : (
-          <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-divider text-left text-xs uppercase tracking-wide text-muted">
-                  {report.columns.map((c) => (
-                    <th
-                      key={c.key}
-                      className={`whitespace-nowrap py-2 pr-4 font-medium ${c.format === "text" ? "" : "text-right"}`}
-                    >
-                      {c.label}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((row, i) => (
-                  <tr key={i} className="border-b border-divider last:border-0">
-                    {report.columns.map((c) => (
-                      <td
-                        key={c.key}
-                        className={`whitespace-nowrap py-2 pr-4 ${c.format === "text" ? "" : "text-right tabular-nums"}`}
-                      >
-                        <Cell value={row[c.key]} column={c} />
-                      </td>
+          <>
+            <Chart kind={report.chart} rows={rows} />
+            <details className="mt-4 border-t border-divider pt-3">
+              <summary className="cursor-pointer text-sm font-medium text-accent-700">
+                Show as table (the rows the SQL returned)
+              </summary>
+              <div className="-mx-4 mt-3 overflow-x-auto px-4 sm:mx-0 sm:px-0">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-divider text-left text-xs uppercase tracking-wide text-muted">
+                      {report.columns.map((c) => (
+                        <th
+                          key={c.key}
+                          className={`whitespace-nowrap py-2 pr-4 font-medium ${c.format === "text" ? "" : "text-right"}`}
+                        >
+                          {c.label}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rows.map((row, i) => (
+                      <tr key={i} className="border-b border-divider last:border-0">
+                        {report.columns.map((c) => (
+                          <td
+                            key={c.key}
+                            className={`whitespace-nowrap py-2 pr-4 ${c.format === "text" ? "" : "text-right tabular-nums"}`}
+                          >
+                            <Cell value={row[c.key]} column={c} />
+                          </td>
+                        ))}
+                      </tr>
                     ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                  </tbody>
+                </table>
+              </div>
+            </details>
+          </>
         )}
       </Card>
 
@@ -125,6 +134,20 @@ export default async function TrendsPage({
       </Card>
     </div>
   );
+}
+
+// One chart per report; each draws from the same rows as the table.
+function Chart({ kind, rows }: { kind: ChartKind; rows: Record<string, unknown>[] }) {
+  switch (kind) {
+    case "monthBars":
+      return <MonthBars rows={rows} />;
+    case "weeklyMultiples":
+      return <WeeklyMultiples rows={rows} />;
+    case "streakMeters":
+      return <StreakMeters rows={rows} />;
+    case "weekdayColumns":
+      return <WeekdayColumns rows={rows} />;
+  }
 }
 
 // Postgres returns counts and decimals as text; format them for reading.
