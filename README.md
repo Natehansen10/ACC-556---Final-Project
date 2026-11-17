@@ -10,13 +10,14 @@ Everyone sets a health goal, checks in each day, and sees everyone's progress.
 **Win condition:** see every family member's check-ins against their calculated monthly target,
 ranked by completion rate, and award the month's prize to the top member(s). Ties share the prize.
 
-## The three screens
+## The screens
 
 | Screen | What it shows | What you do there |
 | --- | --- | --- |
 | **Today** (`/`) | Every family member, every goal, the last 7 days: filled = done. | Tap your own circle for today or yesterday to check in (tap again to undo), or use "Done today" with a note. |
 | **Goals** (`/goals`) | Your goals first, then each family member's, with this month's progress. | Add a goal, end one, or delete one that has no check-ins. |
 | **Leaderboard** (`/leaderboard`) | The win condition: everyone ranked by completion rate for a month. | A family admin awards the prize once the month is over. |
+| **Trends** (`/trends`) | Four reports: month over month, weekly, streaks, day of week. Each shows the exact SQL that built it. | Pick a report and a person (or everyone). |
 
 Plus **Sign in** (`/login`). There is no public sign-up: the admin creates accounts.
 
@@ -34,6 +35,7 @@ Plus **Sign in** (`/login`). There is no public sign-up: the admin creates accou
 | `proxy.ts` | Runs before every page: refreshes the login cookie, sends signed-out visitors to `/login`. |
 | `lib/auth.ts` | Who is logged in → their profile → their family, in one SQL lookup. |
 | `lib/queries.ts` | Every read the app makes, as plain SQL. |
+| `lib/reports.ts` | The four Trends reports: each is one SQL string, shown on the page and run exactly as shown. |
 | `lib/strava.ts` | Strava: tokens, sync, and the auto check-in SQL. `app/strava/connect` and `app/strava/callback` handle the Strava sign-in. |
 | `app/actions.ts` | Every write: sign in/out, check in/undo, add/end/delete a goal, award a prize. |
 
@@ -132,10 +134,10 @@ Record signed in as yourself.
    - Goals: your goals first, then everyone else's, with this month's progress.
    - Leaderboard: the family ranked by completion rate for November, live. The first prize can be
      awarded on Dec 1, once November is over (admins only; ties share it).
-4. **SQL you're proud of** (30 to 45s). Run `sql/06_showcase_query.sql` in the SQL Editor.
-   Explain the CTEs, `RANK()` (ties share a place) and `LAG()` (change from last month).
-5. **What's left** (15 to 30s). A month-over-month Trends page, polish, the writeup, and (after
-   the class) Strava.
+4. **SQL you're proud of** (30 to 45s). Run `sql/06_showcase_query.sql` in the SQL Editor (or open
+   Trends > Streaks and walk through the SQL under the table). Explain the CTEs, `RANK()` (ties share
+   a place) and `LAG()` (change from last month), or the "gaps and islands" streak trick.
+5. **What's left** (15 to 30s). Polish, the writeup, and the professor's access.
 
 ## Known limits (honest list)
 
@@ -147,8 +149,8 @@ Record signed in as yourself.
 - Check-ins record that a habit happened, not a measurement. Weight or blood pressure goes in the
   note for now.
 - Prizes are awarded by a button, not automatically on the 1st of the month.
-- Only one report beyond the daily view (the leaderboard). The month-over-month query exists in
-  SQL but isn't a page yet.
+- Trends reports cover the logged-in person's family only, and "change vs last month" needs two
+  months of data (from December on).
 - No route-level loading skeleton. With Next.js 16.2.10, a root `loading.tsx` made Server
   Action responses hang the form on "Saving…" in production builds (reproduced, then removed).
 

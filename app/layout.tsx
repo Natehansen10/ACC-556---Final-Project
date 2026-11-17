@@ -26,6 +26,7 @@ async function Header() {
               <Link href="/" className="hover:underline">Today</Link>
               <Link href="/goals" className="hover:underline">Goals</Link>
               <Link href="/leaderboard" className="hover:underline">Leaderboard</Link>
+              <Link href="/trends" className="hover:underline">Trends</Link>
             </nav>
             <form action={signOut} className="flex items-center gap-2">
               <span className="text-white/70">{me.full_name}</span>
