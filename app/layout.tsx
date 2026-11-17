@@ -7,9 +7,28 @@ import { getCurrentMember } from "@/lib/auth";
 import { getFamilyStats } from "@/lib/queries";
 import "./globals.css";
 
+// Link previews (iMessage, Slack, email) read these tags. The icons and the card image are
+// files in app/ (favicon.ico, icon.svg, apple-icon.png, opengraph-image.png) that Next.js links
+// automatically. Their URLs end in .ico/.svg/.png, so proxy.ts lets signed-out link bots fetch them.
+const description = "Set a goal. Check in each day. Cheer each other on. ACC 556 final project.";
+
 export const metadata: Metadata = {
+  metadataBase: new URL("https://acc556finalproject.vercel.app"),
   title: "Family Health Tracker",
-  description: "Our family's health goals, checked in daily. ACC 556 final project.",
+  description,
+  applicationName: "Family Health Tracker",
+  openGraph: {
+    type: "website",
+    url: "/",
+    siteName: "Family Health Tracker",
+    title: "Family Health Tracker",
+    description,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Family Health Tracker",
+    description,
+  },
 };
 
 // viewport-fit=cover lets the phone tab bar sit above the home indicator (safe-area inset).
