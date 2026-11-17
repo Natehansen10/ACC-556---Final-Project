@@ -1,8 +1,8 @@
 # Family Health Tracker: ACC 556 final project app
 
 A small web app on top of the 3NF schema in the **"ACC556 Final Project"** Supabase project.
-It is separate from the production app in the repo root, with its own database, its own
-dependencies, and its own deploy.
+It has its own database, its own dependencies, and its own deploy. It does not share code with
+any other app.
 
 **Why it exists:** my dad had a heart transplant, and his recovery runs on daily habits:
 weigh-ins, blood pressure, medications, walks. This app lets the whole family take part.
@@ -49,6 +49,12 @@ each goal was running and calculates `ROUND(frequency × days_in_month / 7)`.
 
 ## Set up (Windows PowerShell)
 
+0. Get the code:
+
+```bash
+git clone https://github.com/Natehansen10/ACC-556---Final-Project; cd ACC-556---Final-Project
+```
+
 1. In Supabase, open the **ACC556 Final Project** project, then the SQL Editor. Run
    `sql/01_schema_and_data.sql`, then `sql/03_lock_down_api.sql`.
 2. In Supabase, click **Connect**, choose **Transaction pooler**, and copy the URI. Replace
@@ -56,7 +62,7 @@ each goal was running and calculates `ROUND(frequency × days_in_month / 7)`.
 3. Copy the example env file, then paste the URI into `.env.local` as `DATABASE_URL`:
 
 ```bash
-cd acc556; Copy-Item .env.example .env.local; notepad .env.local
+Copy-Item .env.example .env.local; notepad .env.local
 ```
 
 4. Install and run:
@@ -76,8 +82,9 @@ Checks before you commit: `npm run typecheck` and `npm run lint`.
 ## Deploy (Phase 5: the professor needs a link)
 
 1. Vercel: **Add New > Project**, import this repo.
-2. Set **Root Directory** to `acc556`.
-3. Add the environment variable `DATABASE_URL` (same pooler URI).
+2. Leave **Root Directory** as the default (the app is at the top of this repo).
+3. Add the environment variable `DATABASE_URL` (same pooler URI) for Production and Preview.
+   The build reads the database, so it fails without it.
 4. Deploy. No login is needed to use the app.
 
 ## Phase 4 video outline (2 to 3 minutes)
