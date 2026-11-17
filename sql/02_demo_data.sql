@@ -1,164 +1,60 @@
--- ACC 556 Phase 4: Family Health Tracker (3NF schema with sample data)
+-- ACC 556: Family Health Tracker. 02: demo (sample) data.
 -- Author: Nate Hansen
--- Environment: Supabase project "ACC556 Final Project" ONLY. Never run this in "ACC556 Class".
+-- Environment: Supabase project "ACC556 Final Project" ONLY. Run after 01_schema.sql.
 --
--- WHAT THIS SCRIPT DOES
---   1. Drops the old tables and the view, so it can be re-run.
---   2. Creates the schema (6 tables + 1 view). Changes since Phase 3 are marked "PHASE 4 CHANGE".
---   3. Seeds 10 fake demo users in auth.users (Supabase's login table), then loads sample data.
---   4. Ends with a row count per table.
---   5. After this, run 03_lock_down_api.sql (dropping and recreating the tables resets their permissions).
+-- SAFE TO RE-RUN. It deletes and reloads ONLY the demo rows:
+--   demo people have ids starting with a1000000-, demo goals b1000000-, demo families f1000000-.
+-- Real family data (The Hansen Family) and any login added with 04_add_member.sql are never touched.
 --
--- PHASE 4 CHANGES IN ONE PARAGRAPH
---   goal_monthly_targets is gone. It only stored each goal's weekly frequency per month, and code had
---   to fill it on the first write of every month. Now a goal's frequency can't be edited: to change it,
---   you end the goal and start a new one. So the goal itself keeps the history, and the view
---   v_goal_monthly_targets calculates every month's target straight from goals. is_active became
---   start_date + end_date, because "paused" alone can't say WHEN a goal stopped counting.
---
--- WARNING: Step 1 deletes any existing data in these tables: reactions, comments, families, profiles,
--- goals, goal_monthly_targets, checkins, monthly_prizes, monthly_prize_winners.
--- CASCADE also removes the foreign keys and security policies that other tables had on them.
--- It does not delete anything from auth.users. Demo users use example.com emails and have no password.
--- UUID = a unique ID type. TIMESTAMPTZ = timestamp with time zone. gen_random_uuid() creates a new UUID.
+-- All demo people, families, and emails are fictional. Demo logins have no password, so nobody can
+-- sign in as them. The professor's guest login is a separate account added with 04_add_member.sql.
 
 BEGIN;
 
 -- ============================================================
--- 1. DROP (children first, so foreign keys do not block the drops)
+-- 1. CLEAR THE OLD DEMO ROWS
 -- ============================================================
--- reactions and comments are outside this schema but point at checkins, so they go first.
--- CASCADE = also drop whatever depends on the table (foreign keys, security policies, views).
-DROP VIEW IF EXISTS public.v_goal_monthly_targets;
-DROP TABLE IF EXISTS public.reactions CASCADE;
-DROP TABLE IF EXISTS public.comments CASCADE;
-DROP TABLE IF EXISTS public.monthly_prize_winners CASCADE;
-DROP TABLE IF EXISTS public.monthly_prizes CASCADE;
-DROP TABLE IF EXISTS public.checkins CASCADE;
-DROP TABLE IF EXISTS public.goal_monthly_targets CASCADE;   -- Removed in Phase 4; dropped here so old copies go away.
-DROP TABLE IF EXISTS public.goals CASCADE;
-DROP TABLE IF EXISTS public.profiles CASCADE;
-DROP TABLE IF EXISTS public.families CASCADE;
+-- Deleting a demo profile also deletes its goals, their check-ins, and its prize-winner rows
+-- (ON DELETE CASCADE). Demo family rows are kept (updated below), so a guest profile that
+-- belongs to a demo family keeps its family.
+DELETE FROM public.monthly_prizes
+WHERE family_id::text LIKE 'f1000000-%';
+
+DELETE FROM public.profiles
+WHERE id::text LIKE 'a1000000-%';
 
 -- ============================================================
--- 2. SCHEMA (3NF)
--- ============================================================
-
-CREATE TABLE public.families (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    name TEXT NOT NULL,                      -- Not UNIQUE on purpose: two families can share a name.
-    created_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,  -- PHASE 3 CHANGE: deleting the creator no longer blocks.
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-
-CREATE TABLE public.profiles (
-    id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
-    full_name TEXT NOT NULL,
-    avatar_url TEXT,                         -- Optional.
-    family_id UUID REFERENCES public.families(id) ON DELETE SET NULL,  -- PHASE 3 CHANGE: optional, so SET NULL fits.
-    timezone TEXT NOT NULL DEFAULT 'America/Denver',
-    role TEXT NOT NULL DEFAULT 'member' CHECK (role IN ('admin', 'member')),
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-
-CREATE TABLE public.goals (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
-    title TEXT NOT NULL,
-    category TEXT,
-    frequency_per_week INTEGER NOT NULL CHECK (frequency_per_week BETWEEN 1 AND 7),
-    source TEXT NOT NULL DEFAULT 'custom' CHECK (source IN ('template', 'custom')),
-    start_date DATE NOT NULL,                -- PHASE 4 CHANGE: first day the goal counts.
-    end_date DATE,                           -- PHASE 4 CHANGE: last day it counts. NULL = still running.
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    unit TEXT,
-    CHECK (end_date IS NULL OR end_date >= start_date)
-);
--- frequency_per_week is never updated by the app. To change it, end the goal and start a new one.
-
--- PHASE 3 CHANGE: user_id is gone. It was a transitive dependency (id -> goal_id -> user_id).
--- The owner is found by joining to goals.
-CREATE TABLE public.checkins (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    goal_id UUID NOT NULL REFERENCES public.goals(id) ON DELETE CASCADE,
-    checkin_date DATE NOT NULL,
-    note TEXT,
-    duration_minutes INTEGER CHECK (duration_minutes > 0),   -- Optional, but never zero or negative.
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    UNIQUE (goal_id, checkin_date)                           -- One check-in per goal per day.
-);
-
--- PHASE 3 CHANGE: split in two. awarded_at depended only on (family, month), not on the winner.
--- One row per family per month here; the winners go in monthly_prize_winners.
-CREATE TABLE public.monthly_prizes (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    family_id UUID NOT NULL REFERENCES public.families(id) ON DELETE CASCADE,
-    month DATE NOT NULL CHECK (EXTRACT(DAY FROM month) = 1),
-    awarded_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    UNIQUE (family_id, month)
-);
-
--- Linking table. A tie means two rows for the same prize. Composite primary key = (prize_id, user_id).
-CREATE TABLE public.monthly_prize_winners (
-    prize_id UUID NOT NULL REFERENCES public.monthly_prizes(id) ON DELETE CASCADE,
-    user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
-    PRIMARY KEY (prize_id, user_id)
-);
-
--- PHASE 4 CHANGE: the view now reads goals directly (no snapshot table).
--- One row per goal per month the goal was running, from its start month through its end month
--- (or the current month if it hasn't ended). Same target rule as Phase 3, in one place:
---   target = ROUND(frequency_per_week * days_in_month / 7)
--- A goal counts for the full month in every month it touches.
-CREATE VIEW public.v_goal_monthly_targets AS
-SELECT x.goal_id,
-       x.month,
-       x.frequency_per_week,
-       x.days_in_month,
-       ROUND(x.frequency_per_week * x.days_in_month / 7.0)::INTEGER AS target
-FROM (
-    SELECT g.id AS goal_id,
-           m.month_start::DATE AS month,
-           g.frequency_per_week,
-           EXTRACT(DAY FROM m.month_start + INTERVAL '1 month' - INTERVAL '1 day')::INTEGER AS days_in_month
-    FROM public.goals g,
-         -- generate_series lists the first day of every month from the start month to the end month.
-         generate_series(date_trunc('month', g.start_date::TIMESTAMP),
-                         date_trunc('month', COALESCE(g.end_date, CURRENT_DATE)::TIMESTAMP),
-                         INTERVAL '1 month') AS m(month_start)
-) x;
-
--- ============================================================
--- 3. SAMPLE DATA
--- All people, families, and emails are fictional.
+-- 2. LOAD THE DEMO ROWS
 -- ============================================================
 
 -- 3a. Demo logins (Supabase's auth.users). Only the columns we need; no passwords.
 INSERT INTO auth.users (instance_id, id, aud, role, email, created_at, updated_at) VALUES
-    ('00000000-0000-0000-0000-000000000000', 'a1000000-0000-4000-8000-000000000001', 'authenticated', 'authenticated', 'dana.hansen@example.com', '2026-08-25 19:00:00-06', '2026-08-25 19:00:00-06'),
-    ('00000000-0000-0000-0000-000000000000', 'a1000000-0000-4000-8000-000000000002', 'authenticated', 'authenticated', 'cole.hansen@example.com', '2026-08-25 21:15:00-06', '2026-08-25 21:15:00-06'),
-    ('00000000-0000-0000-0000-000000000000', 'a1000000-0000-4000-8000-000000000003', 'authenticated', 'authenticated', 'ella.hansen@example.com', '2026-08-26 16:30:00-06', '2026-08-26 16:30:00-06'),
-    ('00000000-0000-0000-0000-000000000000', 'a1000000-0000-4000-8000-000000000004', 'authenticated', 'authenticated', 'sam.hansen@example.com', '2026-08-26 16:45:00-06', '2026-08-26 16:45:00-06'),
+    ('00000000-0000-0000-0000-000000000000', 'a1000000-0000-4000-8000-000000000001', 'authenticated', 'authenticated', 'dana.parker@example.com', '2026-08-25 19:00:00-06', '2026-08-25 19:00:00-06'),
+    ('00000000-0000-0000-0000-000000000000', 'a1000000-0000-4000-8000-000000000002', 'authenticated', 'authenticated', 'cole.parker@example.com', '2026-08-25 21:15:00-06', '2026-08-25 21:15:00-06'),
+    ('00000000-0000-0000-0000-000000000000', 'a1000000-0000-4000-8000-000000000003', 'authenticated', 'authenticated', 'ella.parker@example.com', '2026-08-26 16:30:00-06', '2026-08-26 16:30:00-06'),
+    ('00000000-0000-0000-0000-000000000000', 'a1000000-0000-4000-8000-000000000004', 'authenticated', 'authenticated', 'sam.parker@example.com', '2026-08-26 16:45:00-06', '2026-08-26 16:45:00-06'),
     ('00000000-0000-0000-0000-000000000000', 'a1000000-0000-4000-8000-000000000005', 'authenticated', 'authenticated', 'ngozi.clark@example.com', '2026-08-26 20:00:00-05', '2026-08-26 20:00:00-05'),
     ('00000000-0000-0000-0000-000000000000', 'a1000000-0000-4000-8000-000000000006', 'authenticated', 'authenticated', 'tunde.clark@example.com', '2026-08-27 07:20:00-05', '2026-08-27 07:20:00-05'),
     ('00000000-0000-0000-0000-000000000000', 'a1000000-0000-4000-8000-000000000007', 'authenticated', 'authenticated', 'amara.clark@example.com', '2026-08-27 17:55:00-05', '2026-08-27 17:55:00-05'),
     ('00000000-0000-0000-0000-000000000000', 'a1000000-0000-4000-8000-000000000008', 'authenticated', 'authenticated', 'mia.davis@example.com', '2026-08-27 18:30:00-07', '2026-08-27 18:30:00-07'),
     ('00000000-0000-0000-0000-000000000000', 'a1000000-0000-4000-8000-000000000009', 'authenticated', 'authenticated', 'diego.davis@example.com', '2026-08-28 12:10:00-07', '2026-08-28 12:10:00-07'),
     ('00000000-0000-0000-0000-000000000000', 'a1000000-0000-4000-8000-000000000010', 'authenticated', 'authenticated', 'jordan.pierce@example.com', '2026-08-28 09:45:00-04', '2026-08-28 09:45:00-04')
-ON CONFLICT (id) DO NOTHING;
+ON CONFLICT (id) DO UPDATE SET email = EXCLUDED.email;
 
 -- 3b. Families (3). created_by is the family admin.
 INSERT INTO public.families (id, name, created_by, created_at) VALUES
-    ('f1000000-0000-4000-8000-000000000001', 'The Hansen Family', 'a1000000-0000-4000-8000-000000000001', '2026-08-25 19:10:00-06'),
+    ('f1000000-0000-4000-8000-000000000001', 'The Parker Family', 'a1000000-0000-4000-8000-000000000001', '2026-08-25 19:10:00-06'),
     ('f1000000-0000-4000-8000-000000000002', 'The Clark Family', 'a1000000-0000-4000-8000-000000000005', '2026-08-26 20:05:00-05'),
-    ('f1000000-0000-4000-8000-000000000003', 'The Davis Family', 'a1000000-0000-4000-8000-000000000008', '2026-08-27 18:40:00-07');
+    ('f1000000-0000-4000-8000-000000000003', 'The Davis Family', 'a1000000-0000-4000-8000-000000000008', '2026-08-27 18:40:00-07')
+ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, created_by = EXCLUDED.created_by,
+    created_at = EXCLUDED.created_at;
 
 -- 3c. Profiles (10). Jordan Pierce has no family (family_id is NULL on purpose).
 INSERT INTO public.profiles (id, full_name, avatar_url, family_id, timezone, role, created_at) VALUES
-    ('a1000000-0000-4000-8000-000000000001', 'Dana Hansen', 'https://example.com/avatars/dana.jpg', 'f1000000-0000-4000-8000-000000000001', 'America/Denver', 'admin', '2026-08-25 19:00:00-06'),
-    ('a1000000-0000-4000-8000-000000000002', 'Cole Hansen', NULL, 'f1000000-0000-4000-8000-000000000001', 'America/Denver', 'member', '2026-08-25 21:15:00-06'),
-    ('a1000000-0000-4000-8000-000000000003', 'Ella Hansen', NULL, 'f1000000-0000-4000-8000-000000000001', 'America/Denver', 'member', '2026-08-26 16:30:00-06'),
-    ('a1000000-0000-4000-8000-000000000004', 'Sam Hansen', NULL, 'f1000000-0000-4000-8000-000000000001', 'America/Denver', 'member', '2026-08-26 16:45:00-06'),
+    ('a1000000-0000-4000-8000-000000000001', 'Dana Parker', 'https://example.com/avatars/dana.jpg', 'f1000000-0000-4000-8000-000000000001', 'America/Denver', 'admin', '2026-08-25 19:00:00-06'),
+    ('a1000000-0000-4000-8000-000000000002', 'Cole Parker', NULL, 'f1000000-0000-4000-8000-000000000001', 'America/Denver', 'member', '2026-08-25 21:15:00-06'),
+    ('a1000000-0000-4000-8000-000000000003', 'Ella Parker', NULL, 'f1000000-0000-4000-8000-000000000001', 'America/Denver', 'member', '2026-08-26 16:30:00-06'),
+    ('a1000000-0000-4000-8000-000000000004', 'Sam Parker', NULL, 'f1000000-0000-4000-8000-000000000001', 'America/Denver', 'member', '2026-08-26 16:45:00-06'),
     ('a1000000-0000-4000-8000-000000000005', 'Ngozi Clark', 'https://example.com/avatars/ngozi.jpg', 'f1000000-0000-4000-8000-000000000002', 'America/Chicago', 'admin', '2026-08-26 20:00:00-05'),
     ('a1000000-0000-4000-8000-000000000006', 'Tunde Clark', NULL, 'f1000000-0000-4000-8000-000000000002', 'America/Chicago', 'member', '2026-08-27 07:20:00-05'),
     ('a1000000-0000-4000-8000-000000000007', 'Amara Clark', NULL, 'f1000000-0000-4000-8000-000000000002', 'America/Chicago', 'member', '2026-08-27 17:55:00-05'),
@@ -611,6 +507,22 @@ INSERT INTO public.monthly_prize_winners (prize_id, user_id) VALUES
     ('c1000000-0000-4000-8000-000000000002', 'a1000000-0000-4000-8000-000000000005'),
     ('c1000000-0000-4000-8000-000000000002', 'a1000000-0000-4000-8000-000000000007'),
     ('c1000000-0000-4000-8000-000000000003', 'a1000000-0000-4000-8000-000000000009');
+
+-- 3h. Keep the demo current. Fills check-ins for running demo goals from Nov 17 through yesterday,
+--     so the demo never looks empty on presentation day. hashtext() turns goal + date into a
+--     repeatable pseudo-random number, so re-running gives the same rows: about 70% of each
+--     goal's weekly target.
+INSERT INTO public.checkins (goal_id, checkin_date, created_at)
+SELECT g.id,
+       d.day::date,
+       (d.day::date + TIME '19:30') AT TIME ZONE p.timezone
+FROM public.goals g
+JOIN public.profiles p ON p.id = g.user_id,
+     generate_series(TIMESTAMP '2026-11-17', CURRENT_DATE - 1, INTERVAL '1 day') AS d(day)
+WHERE g.id::text LIKE 'b1000000-%'
+  AND g.end_date IS NULL
+  AND abs(hashtext(g.id::text || d.day::date::text)) % 100 < g.frequency_per_week * 10
+ON CONFLICT (goal_id, checkin_date) DO NOTHING;
 
 COMMIT;
 

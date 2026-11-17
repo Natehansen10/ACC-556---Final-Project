@@ -1,12 +1,13 @@
 -- ACC 556: close the public API on the project tables.
--- Run after 01_schema_and_data.sql (re-run it any time you re-run 01).
+-- Run after 01_schema.sql (re-run it any time you re-run 01; 02 does not undo it).
 --
 -- WHY: Supabase publishes every table in the public schema through an HTTP API that anyone with the
 -- project's public (anon) key can call. Tables created in the SQL Editor start with Row Level Security
 -- OFF, which means that API could read and change every row.
 --
--- This app never uses that API. The browser never talks to the database; the Next.js server connects
--- directly with the database password (DATABASE_URL), as the table owner. So the safe setting is:
+-- This app uses Supabase only for login (Supabase Auth). It never reads tables through that API: the
+-- Next.js server connects directly with the database password (DATABASE_URL), as the table owner, and
+-- scopes every query to the logged-in person's family. So the safe setting is:
 --   1. Turn on Row Level Security with no policies: the API roles see zero rows.
 --   2. Revoke the API roles' privileges outright, including on the view (views skip RLS by default).
 -- The table owner (the app's connection) is not affected by either step.

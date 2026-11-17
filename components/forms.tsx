@@ -16,74 +16,85 @@ function useResetOnSuccess(state: ActionState) {
   return ref;
 }
 
-export function CheckinForm({
+export function LoginForm({ action }: { action: FormAction }) {
+  const [state, formAction, pending] = useActionState(action, null);
+  return (
+    <form action={formAction} className="grid gap-3">
+      <label className="grid gap-1 text-sm">
+        <span className="font-medium">Email</span>
+        <input type="email" name="email" required autoComplete="email" className={inputClass} />
+      </label>
+      <label className="grid gap-1 text-sm">
+        <span className="font-medium">Password</span>
+        <input
+          type="password"
+          name="password"
+          required
+          autoComplete="current-password"
+          className={inputClass}
+        />
+      </label>
+      <button type="submit" disabled={pending} className={buttonClass}>
+        {pending ? "Signing in…" : "Sign in"}
+      </button>
+      {state && !state.ok && <Alert ok={false}>{state.message}</Alert>}
+    </form>
+  );
+}
+
+// One day on the Today page. On your own goals, yesterday and today are
+// buttons: tap to check in, tap again to undo. Every other day is display-only.
+export function CheckDot({
   action,
-  goals,
-  today,
-  yesterday,
+  done,
+  label,
 }: {
-  action: FormAction;
-  goals: { id: string; title: string }[];
-  today: string;
-  yesterday: string;
+  action: ButtonAction;
+  done: boolean;
+  label: string;
 }) {
   const [state, formAction, pending] = useActionState(action, null);
-  const ref = useResetOnSuccess(state);
-
   return (
-    <form ref={ref} action={formAction} className="grid gap-3 sm:grid-cols-2">
-      <label className="grid gap-1 text-sm sm:col-span-2">
-        <span className="font-medium">Goal</span>
-        <select name="goal_id" required className={inputClass} defaultValue="">
-          <option value="" disabled>
-            Choose a goal
-          </option>
-          {goals.map((g) => (
-            <option key={g.id} value={g.id}>
-              {g.title}
-            </option>
-          ))}
-        </select>
-      </label>
-      <label className="grid gap-1 text-sm">
-        <span className="font-medium">
-          Date <span className="font-normal text-muted">(today or yesterday)</span>
+    <form action={formAction} className="flex flex-col items-center">
+      <button
+        type="submit"
+        disabled={pending}
+        aria-label={label}
+        title={label}
+        className={`h-7 w-7 rounded-full border-2 transition ${
+          done
+            ? "border-success-500 bg-success-500 text-white"
+            : "border-accent-600 bg-white hover:bg-accent-100"
+        } ${pending ? "opacity-50" : ""}`}
+      >
+        {done ? "✓" : ""}
+      </button>
+      {state && !state.ok && (
+        <span role="alert" className="mt-1 max-w-24 text-center text-[11px] leading-tight text-red-700">
+          {state.message}
         </span>
-        <input
-          type="date"
-          name="checkin_date"
-          required
-          min={yesterday}
-          max={today}
-          defaultValue={today}
-          className={inputClass}
-        />
-      </label>
-      <label className="grid gap-1 text-sm">
-        <span className="font-medium">
-          Minutes <span className="font-normal text-muted">(optional)</span>
-        </span>
-        <input
-          type="number"
-          name="duration_minutes"
-          min={1}
-          max={1440}
-          inputMode="numeric"
-          className={inputClass}
-        />
-      </label>
-      <label className="grid gap-1 text-sm sm:col-span-2">
-        <span className="font-medium">
-          Note <span className="font-normal text-muted">(optional)</span>
-        </span>
-        <input type="text" name="note" maxLength={280} className={inputClass} />
-      </label>
-      <div className="flex flex-col gap-2 sm:col-span-2">
-        <button type="submit" disabled={pending} className={buttonClass}>
-          {pending ? "Saving…" : "Log check-in"}
-        </button>
-        {state && <Alert ok={state.ok}>{state.message}</Alert>}
-      </div>
+      )}
+    </form>
+  );
+}
+
+// "Done today" with an optional note, under each of your own unfinished goals.
+export function DoneTodayForm({ action }: { action: FormAction }) {
+  const [state, formAction, pending] = useActionState(action, null);
+  return (
+    <form action={formAction} className="mt-2 flex flex-col gap-1.5 sm:flex-row sm:items-center">
+      <input
+        type="text"
+        name="note"
+        maxLength={280}
+        placeholder="Note (optional), e.g. BP 128/82"
+        aria-label="Note for today"
+        className={`${inputClass} sm:flex-1`}
+      />
+      <button type="submit" disabled={pending} className={buttonClass}>
+        {pending ? "Saving…" : "Done today"}
+      </button>
+      {state && !state.ok && <Alert ok={false}>{state.message}</Alert>}
     </form>
   );
 }
@@ -147,7 +158,7 @@ export function GoalForm({ action }: { action: FormAction }) {
   );
 }
 
-// A single-button form (delete, end goal, award). Shows its own error inline.
+// A single-button form (end goal, delete goal, award prize). Shows its own error inline.
 export function ActionButton({
   action,
   label,

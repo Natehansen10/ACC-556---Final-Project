@@ -53,25 +53,15 @@ export function memberProgress(db: Db, familyId: string, month: string) {
 // ------------------------------------------------------------
 // Navigation data
 // ------------------------------------------------------------
-export type Family = { id: string; name: string; member_count: number };
-
-export async function getFamilies(): Promise<Family[]> {
-  await connection();
-  return sql<Family[]>`
-    SELECT f.id, f.name, COUNT(p.id)::int AS member_count
-    FROM public.families f
-    LEFT JOIN public.profiles p ON p.family_id = f.id
-    GROUP BY f.id, f.name
-    ORDER BY f.name
-  `;
-}
-
-// Months in which at least one goal was running, newest first.
-export async function getMonths(): Promise<string[]> {
+// Months in which at least one of this family's goals was running, newest first.
+export async function getMonths(familyId: string): Promise<string[]> {
   await connection();
   const rows = await sql<{ month: string }[]>`
-    SELECT DISTINCT month::text AS month
-    FROM public.v_goal_monthly_targets
+    SELECT DISTINCT t.month::text AS month
+    FROM public.v_goal_monthly_targets t
+    JOIN public.goals g    ON g.id = t.goal_id
+    JOIN public.profiles p ON p.id = g.user_id
+    WHERE p.family_id = ${familyId}
     ORDER BY month DESC
   `;
   return rows.map((r) => r.month);
@@ -79,12 +69,18 @@ export async function getMonths(): Promise<string[]> {
 
 export type DbStats = { members: number; goals: number; checkins: number };
 
-export async function getDbStats(): Promise<DbStats> {
+// Footer proof that the page is live from the database: this family's row counts.
+export async function getFamilyStats(familyId: string): Promise<DbStats> {
   await connection();
   const [row] = await sql<DbStats[]>`
-    SELECT (SELECT COUNT(*) FROM public.profiles)::int AS members,
-           (SELECT COUNT(*) FROM public.goals)::int    AS goals,
-           (SELECT COUNT(*) FROM public.checkins)::int AS checkins
+    SELECT (SELECT COUNT(*) FROM public.profiles p WHERE p.family_id = ${familyId})::int AS members,
+           (SELECT COUNT(*) FROM public.goals g
+              JOIN public.profiles p ON p.id = g.user_id
+             WHERE p.family_id = ${familyId})::int AS goals,
+           (SELECT COUNT(*) FROM public.checkins c
+              JOIN public.goals g    ON g.id = c.goal_id
+              JOIN public.profiles p ON p.id = g.user_id
+             WHERE p.family_id = ${familyId})::int AS checkins
   `;
   return row;
 }
@@ -205,74 +201,70 @@ export async function getPrizeStatus(
 }
 
 // ------------------------------------------------------------
-// Members
+// Family members
 // ------------------------------------------------------------
-export type MemberListRow = {
-  id: string;
-  full_name: string;
-  role: string;
-  family_name: string | null;
-  active_goals: number;
-  total_checkins: number;
-  last_checkin: string | null;
-  prizes_won: number;
-};
+export type FamilyMember = { id: string; full_name: string; role: string };
 
-export async function getMembers(): Promise<MemberListRow[]> {
+export async function getFamilyMembers(familyId: string): Promise<FamilyMember[]> {
   await connection();
-  return sql<MemberListRow[]>`
-    SELECT p.id,
-           p.full_name,
-           p.role,
-           f.name AS family_name,
-           (SELECT COUNT(*) FROM public.goals g
-             WHERE g.user_id = p.id AND g.end_date IS NULL)::int AS active_goals,
-           (SELECT COUNT(*) FROM public.checkins c
-             JOIN public.goals g ON g.id = c.goal_id
-             WHERE g.user_id = p.id)::int AS total_checkins,
-           (SELECT MAX(c.checkin_date) FROM public.checkins c
-             JOIN public.goals g ON g.id = c.goal_id
-             WHERE g.user_id = p.id)::text AS last_checkin,
-           (SELECT COUNT(*) FROM public.monthly_prize_winners w
-             WHERE w.user_id = p.id)::int AS prizes_won
+  return sql<FamilyMember[]>`
+    SELECT p.id, p.full_name, p.role
     FROM public.profiles p
-    LEFT JOIN public.families f ON f.id = p.family_id
-    ORDER BY f.name NULLS LAST, p.full_name
+    WHERE p.family_id = ${familyId}
+    ORDER BY p.full_name
   `;
 }
 
-export type Member = {
-  id: string;
-  full_name: string;
-  role: string;
-  timezone: string;
-  family_id: string | null;
-  family_name: string | null;
-  today: string;
-  yesterday: string;
+// ------------------------------------------------------------
+// Today page: every goal x the last 7 days, done or not
+// ------------------------------------------------------------
+export type TodayCell = {
+  member_id: string;
+  goal_id: string;
+  title: string;
+  frequency_per_week: number;
+  day: string;
+  counts: boolean; // false = before the goal started or after it ended
+  done: boolean;
+  note: string | null;
 };
 
-export async function getMember(id: string): Promise<Member | undefined> {
+// generate_series makes one row per day (6 days ago through today).
+// CROSS JOIN pairs every goal with every day; LEFT JOIN checkins marks the
+// days that have a check-in. No check-in row = not done that day.
+export async function getTodayBoard(familyId: string, today: string): Promise<TodayCell[]> {
   await connection();
-  const [row] = await sql<Member[]>`
-    SELECT p.id,
-           p.full_name,
-           p.role,
-           p.timezone,
-           f.id   AS family_id,
-           f.name AS family_name,
-           -- "today" in the member's own timezone, not the server's
-           (now() AT TIME ZONE p.timezone)::date::text AS today,
-           ((now() AT TIME ZONE p.timezone)::date - 1)::text AS yesterday
-    FROM public.profiles p
-    LEFT JOIN public.families f ON f.id = p.family_id
-    WHERE p.id = ${id}
+  return sql<TodayCell[]>`
+    SELECT g.user_id AS member_id,
+           g.id      AS goal_id,
+           g.title,
+           g.frequency_per_week,
+           d.day::date::text AS day,
+           (d.day::date >= g.start_date
+            AND (g.end_date IS NULL OR d.day::date <= g.end_date)) AS counts,
+           (c.id IS NOT NULL) AS done,
+           c.note
+    FROM public.goals g
+    JOIN public.profiles p ON p.id = g.user_id
+    CROSS JOIN generate_series((${today}::date - 6)::timestamp,
+                               ${today}::date::timestamp,
+                               INTERVAL '1 day') AS d(day)
+    LEFT JOIN public.checkins c
+           ON c.goal_id = g.id
+          AND c.checkin_date = d.day::date
+    WHERE p.family_id = ${familyId}
+      AND g.start_date <= ${today}::date
+      AND (g.end_date IS NULL OR g.end_date >= ${today}::date - 6)
+    ORDER BY g.start_date, g.created_at, d.day
   `;
-  return row;
 }
 
-export type MemberGoal = {
+// ------------------------------------------------------------
+// Goals page: every goal in the family with this month's progress
+// ------------------------------------------------------------
+export type FamilyGoal = {
   id: string;
+  user_id: string;
   title: string;
   category: string | null;
   unit: string | null;
@@ -284,13 +276,11 @@ export type MemberGoal = {
   total_checkins: number;
 };
 
-export async function getMemberGoals(
-  memberId: string,
-  month: string,
-): Promise<MemberGoal[]> {
+export async function getFamilyGoals(familyId: string, month: string): Promise<FamilyGoal[]> {
   await connection();
-  return sql<MemberGoal[]>`
+  return sql<FamilyGoal[]>`
     SELECT g.id,
+           g.user_id,
            g.title,
            g.category,
            g.unit,
@@ -305,52 +295,11 @@ export async function getMemberGoals(
            )::int AS month_checkins,
            (SELECT COUNT(*) FROM public.checkins c WHERE c.goal_id = g.id)::int AS total_checkins
     FROM public.goals g
+    JOIN public.profiles p ON p.id = g.user_id
     LEFT JOIN public.v_goal_monthly_targets t
            ON t.goal_id = g.id AND t.month = ${month}
-    WHERE g.user_id = ${memberId}
+    WHERE p.family_id = ${familyId}
+      AND (g.end_date IS NULL OR g.end_date >= ${month}::date)
     ORDER BY (g.end_date IS NULL) DESC, g.start_date, g.created_at
   `;
-}
-
-export type MemberCheckin = {
-  id: string;
-  checkin_date: string;
-  note: string | null;
-  duration_minutes: number | null;
-  goal_title: string;
-  can_delete: boolean;
-};
-
-// Only today's and yesterday's check-ins can be deleted (same window as logging).
-export async function getMemberCheckins(
-  memberId: string,
-  limit = 30,
-): Promise<MemberCheckin[]> {
-  await connection();
-  return sql<MemberCheckin[]>`
-    SELECT c.id,
-           c.checkin_date::text AS checkin_date,
-           c.note,
-           c.duration_minutes,
-           g.title AS goal_title,
-           c.checkin_date >= (now() AT TIME ZONE p.timezone)::date - 1 AS can_delete
-    FROM public.checkins c
-    JOIN public.goals g    ON g.id = c.goal_id
-    JOIN public.profiles p ON p.id = g.user_id
-    WHERE g.user_id = ${memberId}
-    ORDER BY c.checkin_date DESC, c.created_at DESC
-    LIMIT ${limit}
-  `;
-}
-
-export async function getMemberPrizeMonths(memberId: string): Promise<string[]> {
-  await connection();
-  const rows = await sql<{ month: string }[]>`
-    SELECT pr.month::text AS month
-    FROM public.monthly_prize_winners w
-    JOIN public.monthly_prizes pr ON pr.id = w.prize_id
-    WHERE w.user_id = ${memberId}
-    ORDER BY pr.month DESC
-  `;
-  return rows.map((r) => r.month);
 }

@@ -37,3 +37,18 @@ export function formatDay(date: string): string {
 export function pct(value: number | null): string {
   return value === null ? "–" : `${value.toFixed(1)}%`;
 }
+
+const weekdayFmt = new Intl.DateTimeFormat("en-US", { weekday: "short", timeZone: "UTC" });
+
+export function formatWeekday(date: string): string {
+  return weekdayFmt.format(utc(date));
+}
+
+// The n days ending on `today` (oldest first), as YYYY-MM-DD strings.
+// Pure date arithmetic in UTC, so the server's timezone can't shift it.
+export function lastDays(today: string, n: number): string[] {
+  const end = utc(today).getTime();
+  return Array.from({ length: n }, (_, i) =>
+    new Date(end - (n - 1 - i) * 86_400_000).toISOString().slice(0, 10),
+  );
+}
