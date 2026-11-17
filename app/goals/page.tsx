@@ -39,7 +39,7 @@ export default async function GoalsPage() {
           <p className="mb-3 text-sm font-medium">
             Add a goal{" "}
             <span className="font-normal text-muted">
-              (counts from this month; times per week can&apos;t be changed later)
+              (counts from the 1st of this month; times per week can&apos;t be changed later)
             </span>
           </p>
           <GoalForm action={createGoal} />

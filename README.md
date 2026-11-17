@@ -64,7 +64,7 @@ running and calculates `ROUND(frequency × days_in_month / 7)`.
 | Check-ins are for today or yesterday only, your own goals only. | Past months stop changing, so an awarded prize matches the board. |
 | One check-in per goal per day (`UNIQUE (goal_id, checkin_date)`). | No double counting. |
 | A goal's times-per-week can't be edited. To change it, end the goal and add a new one. | Old months keep the frequency they had, with no snapshot table. |
-| A goal counts for the full month in every month it runs. | One formula, easy to check by hand. |
+| A goal starts on the 1st of the month it's created in and counts the full month, every month it runs. | One formula, easy to check by hand; the start date matches the target. |
 | A goal with check-ins can be ended, not deleted. A goal with none can be deleted. | History stays; mistakes are easy to undo. |
 | Only a family `admin` can award the prize, once the month is over. Ties share it. | `RANK()` gives tied members the same place. |
 
@@ -175,7 +175,7 @@ automatically ("Run" goals count Strava runs, "Daily walk" counts walks).
 | `Run` also matches TrailRun and VirtualRun; `Ride` matches VirtualRide, GravelRide, and so on (`sport_type LIKE '%' \|\| goal type`). | Strava has many variants of the same sport. |
 | One activity checks in one goal, once (`UNIQUE strava_activity_id`). One check-in per goal per day still holds. | No double counting. |
 | Strava can fill in any day this month, not just today or yesterday. | An activity is proof, so a missed day can count. |
-| Undoing a Strava check-in sticks: only activities that are new to the app create check-ins. | You stay in control. |
+| Linking a goal to Strava checks it in for this month's already-imported activities right away. After that, only newly imported activities create check-ins, so undoing one sticks. | Linking works immediately, and you stay in control. |
 | Minutes and distance stay in `strava_activities`; they are not copied into `checkins`. | 3NF: they depend on the activity, not the check-in. |
 
 **Setup**

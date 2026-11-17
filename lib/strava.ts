@@ -191,6 +191,30 @@ export async function syncStrava(me: CurrentMember, force = false): Promise<Sync
   return { imported, checkedIn };
 }
 
+// When a goal is linked to Strava (or created already linked), check it in for this month's
+// activities that were imported earlier and haven't counted for anything yet.
+// Same matching rules as the sync; NOT EXISTS skips activities that already made a check-in.
+export async function matchGoalToStrava(memberId: string, goalId: string): Promise<number> {
+  const created = await sql`
+    INSERT INTO public.checkins (goal_id, checkin_date, strava_activity_id)
+    SELECT DISTINCT ON (a.activity_date)
+           g.id, a.activity_date, a.id
+    FROM public.goals g
+    JOIN public.strava_activities a ON a.profile_id = g.user_id
+    WHERE g.id = ${goalId}
+      AND g.user_id = ${memberId}
+      AND g.strava_sport_type IS NOT NULL
+      AND (g.strava_sport_type = 'Any' OR a.sport_type LIKE '%' || g.strava_sport_type)
+      AND a.activity_date >= g.start_date
+      AND (g.end_date IS NULL OR a.activity_date <= g.end_date)
+      AND NOT EXISTS (SELECT 1 FROM public.checkins c WHERE c.strava_activity_id = a.id)
+    ORDER BY a.activity_date, a.id
+    ON CONFLICT DO NOTHING
+    RETURNING id
+  `;
+  return created.length;
+}
+
 // Disconnect: tell Strava to revoke access, then forget the tokens and imported activities.
 // Check-ins made from Strava stay (their strava_activity_id becomes NULL via ON DELETE SET NULL).
 export async function disconnectStrava(memberId: string): Promise<void> {

@@ -8,6 +8,7 @@ import { memberProgress } from "@/lib/queries";
 import {
   STRAVA_SPORT_TYPES,
   disconnectStrava as forgetStrava,
+  matchGoalToStrava,
   syncStrava,
 } from "@/lib/strava";
 import { createSupabase } from "@/lib/supabase";
@@ -164,17 +165,24 @@ export async function createGoal(_prev: ActionState, formData: FormData): Promis
   }
   if (strava === undefined) return { ok: false, message: "Pick a Strava activity type from the list." };
 
+  let matched = 0;
   try {
-    // The goal starts counting today, in your own timezone.
-    await sql`
+    // A goal counts the full month it starts in (the target is a full month), so it starts on
+    // the 1st of this month in your timezone. Hand check-ins are still today or yesterday only.
+    const [goal] = await sql<{ id: string }[]>`
       INSERT INTO public.goals (user_id, title, category, frequency_per_week, unit, start_date, strava_sport_type)
-      VALUES (${me.id}, ${title}, ${category || null}, ${frequency}, ${unit || null}, ${me.today}, ${strava})
+      VALUES (${me.id}, ${title}, ${category || null}, ${frequency}, ${unit || null}, ${me.month}, ${strava})
+      RETURNING id
     `;
+    if (strava) matched = await matchGoalToStrava(me.id, goal.id);
   } catch (err) {
     return fail(err);
   }
   refresh();
-  return { ok: true, message: `Added "${title}".` };
+  return {
+    ok: true,
+    message: matched > 0 ? `Added "${title}" with ${matched} check-in${matched === 1 ? "" : "s"} from Strava.` : `Added "${title}".`,
+  };
 }
 
 // Ending a goal sets end_date to today. It still counts for this month and
@@ -246,6 +254,7 @@ export async function setGoalStrava(
   if (!UUID_RE.test(goalId)) return { ok: false, message: "Goal not found." };
   const strava = stravaType(text(formData, "strava_sport_type"));
   if (strava === undefined) return { ok: false, message: "Pick a Strava activity type from the list." };
+  let matched = 0;
   try {
     const rows = await sql`
       UPDATE public.goals
@@ -254,11 +263,20 @@ export async function setGoalStrava(
       RETURNING id
     `;
     if (rows.length === 0) return { ok: false, message: "Goal not found." };
+    // Count this month's already-imported activities for this goal right away.
+    matched = strava ? await matchGoalToStrava(me.id, goalId) : 0;
   } catch (err) {
     return fail(err);
   }
   refresh();
-  return { ok: true, message: strava ? `Strava ${strava} activities now count.` : "Manual check-ins only." };
+  if (!strava) return { ok: true, message: "Manual check-ins only." };
+  return {
+    ok: true,
+    message:
+      matched > 0
+        ? `Saved. ${matched} check-in${matched === 1 ? "" : "s"} added from Strava.`
+        : "Saved. New matching activities will check in.",
+  };
 }
 
 export async function syncStravaNow(_prev: ActionState): Promise<ActionState> {
