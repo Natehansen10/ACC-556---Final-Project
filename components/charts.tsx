@@ -1,12 +1,16 @@
 import type { ReactNode } from "react";
 
 // Trends charts. Plain HTML/CSS bars drawn on the server from the rows the report's SQL returned:
-// no chart library and no browser JavaScript. Every mark is focusable; hover or keyboard focus
-// shows a tooltip. The same numbers are always in the table under the chart.
+// no chart library and no browser JavaScript. Every mark is focusable; hover, tap, or keyboard
+// focus shows a tooltip that also names the SQL column the number came from. The same numbers
+// are always in the table under the chart.
 //
 // Colors are CSS variables from app/globals.css (--viz-*). Text never uses the series color.
 
 type Row = Record<string, unknown>;
+
+// The month in progress, so its partial rate isn't read as a drop.
+export type MonthProgress = { label: string; day: number; daysInMonth: number };
 
 const num = (v: unknown) => (v === null || v === undefined ? null : Number(v));
 const str = (v: unknown) => (v === null || v === undefined ? "" : String(v));
@@ -25,16 +29,19 @@ function edge(i: number, n: number): "left" | "center" | "right" {
   return "center";
 }
 
-// A focusable hit area with a tooltip. The value leads; the detail follows.
+// A focusable hit area with a tooltip. The value leads, the detail follows, and `source`
+// names the SQL column(s) behind the number.
 function Tip({
   value,
   detail,
+  source,
   align = "center",
   className = "",
   children,
 }: {
   value: string;
   detail: string;
+  source?: string;
   align?: "center" | "left" | "right";
   className?: string;
   children: ReactNode;
@@ -42,47 +49,62 @@ function Tip({
   return (
     <div
       tabIndex={0}
-      aria-label={`${value}, ${detail}`}
-      className={`group relative rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-accent-600 ${className}`}
+      aria-label={`${value}, ${detail}${source ? ` (${source})` : ""}`}
+      className={`group relative rounded-md outline-none focus-visible:ring-2 focus-visible:ring-focus ${className}`}
     >
       {children}
       <span
         role="tooltip"
-        className={`pointer-events-none absolute bottom-full z-20 mb-1.5 hidden w-max max-w-[15rem] rounded-md bg-neutral-900 px-2 py-1 text-xs text-white shadow-md group-hover:block group-focus:block ${
+        className={`pointer-events-none absolute bottom-full z-20 mb-1.5 hidden w-max max-w-[16rem] rounded-lg bg-neutral-900 px-2.5 py-1.5 text-xs leading-snug text-white shadow-[0_4px_12px_rgb(0_0_0/0.18)] group-hover:block group-focus:block ${
           align === "left" ? "left-0" : align === "right" ? "right-0" : "left-1/2 -translate-x-1/2"
         }`}
       >
         <span className="font-semibold">{value}</span>
-        <span className="text-white/75"> · {detail}</span>
+        <span className="text-white/80"> · {detail}</span>
+        {source && <span className="mt-0.5 block font-mono text-white/80">{source}</span>}
       </span>
     </div>
   );
 }
 
-function Legend({ items }: { items: { label: string; color: string }[] }) {
+function Legend({ children }: { children: ReactNode }) {
   return (
-    <ul className="mb-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted" aria-label="Legend">
-      {items.map((i) => (
-        <li key={i.label} className="flex items-center gap-1.5">
-          <span className="inline-block h-2.5 w-2.5 rounded-sm" style={{ background: i.color }} />
-          {i.label}
-        </li>
-      ))}
+    <ul className="mb-4 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted" aria-label="Legend">
+      {children}
     </ul>
   );
 }
 
+function Swatch({ color, label, outline }: { color: string; label: string; outline?: string }) {
+  return (
+    <li className="flex items-center gap-1.5">
+      <span
+        className="inline-block h-2.5 w-3.5 rounded-sm"
+        style={{ background: color, boxShadow: outline ? `inset 0 0 0 1px ${outline}` : undefined }}
+      />
+      {label}
+    </li>
+  );
+}
+
+function sign(n: number) {
+  return n > 0 ? "+" : n < 0 ? "−" : "";
+}
+
 // ------------------------------------------------------------
-// Month over month: one row per person, one bar per month (last 3), 0..max% axis.
+// Month over month: one block per person, one labeled bar per month (last 3), 0..max% axis.
+// The month in progress gets a pace mark and "on pace / behind pace" instead of a red drop.
 // ------------------------------------------------------------
 const MONTH_COLORS = ["var(--viz-month-1)", "var(--viz-month-2)", "var(--viz-month-3)"];
 
-export function MonthBars({ rows }: { rows: Row[] }) {
+export function MonthBars({ rows, progress }: { rows: Row[]; progress: MonthProgress }) {
   // Rows arrive newest month first; keep the last three months, oldest -> newest.
   const allMonths = [...new Set(rows.map((r) => str(r.month_label)))];
   const months = allMonths.slice(0, 3).reverse();
   const newest = months[months.length - 1];
   const colors = MONTH_COLORS.slice(MONTH_COLORS.length - months.length);
+  const pace = (100 * progress.day) / progress.daysInMonth;
+  const isCurrent = (m: string) => m === progress.label;
   // People in the newest month's ranking order, then anyone without a newest-month row.
   const people = [
     ...new Set([
@@ -98,57 +120,88 @@ export function MonthBars({ rows }: { rows: Row[] }) {
 
   return (
     <div>
-      <Legend items={months.map((m, i) => ({ label: m, color: colors[i] }))} />
-      <div className="flex flex-col">
+      <Legend>
+        {months.map((m, i) => (
+          <Swatch key={m} color={colors[i]} label={isCurrent(m) ? `${m} (so far)` : m} />
+        ))}
+        {months.some(isCurrent) && (
+          <li className="flex items-center gap-1.5">
+            <span className="inline-block h-3 w-0.5 rounded-full bg-foreground/70" />
+            On-track pace ({progress.day} of {progress.daysInMonth} days)
+          </li>
+        )}
+      </Legend>
+      <ul className="flex flex-col divide-y divide-divider">
         {people.map((person) => {
           const latest = find(person, newest);
           const latestPct = num(latest?.completion_pct);
           const change = num(latest?.change_vs_last_month);
+          const current = isCurrent(newest);
           return (
-            <div key={person} className="grid grid-cols-[5.5rem_1fr] items-center gap-3 py-1.5">
-              <span className="truncate text-sm">{person}</span>
-              <div className="relative">
-                <Grid ticks={ticks} x={x} highlight={100} />
-                <div className="relative flex flex-col gap-0.5">
-                  {months.map((m, i) => {
-                    const r = find(person, m);
-                    const pct = num(r?.completion_pct);
-                    return (
-                      <div key={m} className="flex h-2.5 items-center">
+            <li key={person} className="py-3 first:pt-0">
+              <div className="mb-1.5 flex flex-wrap items-baseline justify-between gap-x-3">
+                <span className="min-w-0 font-medium break-words">{person}</span>
+                <span className="text-sm text-muted tabular-nums">
+                  {latestPct === null ? (
+                    `No goals in ${newest}`
+                  ) : current ? (
+                    <>
+                      <span className="font-semibold text-foreground">{latestPct.toFixed(1)}%</span> so far ·{" "}
+                      {latestPct >= pace ? "on pace" : "behind pace"}
+                    </>
+                  ) : (
+                    <>
+                      <span className="font-semibold text-foreground">{latestPct.toFixed(1)}%</span>
+                      {change !== null && (
+                        <span className={change > 0 ? "text-success-700" : change < 0 ? "text-red-800" : ""}>
+                          {` · ${sign(change)}${Math.abs(change).toFixed(1)} pts`}
+                        </span>
+                      )}
+                    </>
+                  )}
+                </span>
+              </div>
+              <div className="flex flex-col gap-1">
+                {months.map((m, i) => {
+                  const r = find(person, m);
+                  const pct = num(r?.completion_pct);
+                  return (
+                    <div key={m} className="grid grid-cols-[2.25rem_1fr] items-center gap-2">
+                      <span className="text-xs text-muted">{m.slice(0, 3)}</span>
+                      <div className="relative">
+                        <Grid ticks={ticks} x={x} highlight={100} />
                         {pct === null ? (
-                          <span className="h-full" />
+                          <div className="relative flex h-11 items-center text-xs text-muted">No goals</div>
                         ) : (
                           <Tip
                             align="left"
                             value={`${pct.toFixed(1)}%`}
-                            detail={`${person}, ${m}: ${num(r?.checkins)} of ${num(r?.target)} check-ins`}
-                            className="flex h-full w-full items-center py-[1px]"
+                            detail={`${person}, ${m}${isCurrent(m) ? " so far" : ""}: ${num(r?.checkins)} of ${num(r?.target)} check-ins`}
+                            source={`completion_pct = checkins ÷ target`}
+                            className="relative flex h-11 items-center"
                           >
                             <span
-                              className="block h-2 rounded-r"
-                              style={{ width: `max(${x(pct)}, 2px)`, background: colors[i], minWidth: 2 }}
+                              className="block h-3 rounded-r"
+                              style={{ width: `max(${x(pct)}, 3px)`, background: colors[i] }}
                             />
+                            {isCurrent(m) && (
+                              <span
+                                aria-hidden
+                                className="absolute top-2.5 bottom-2.5 w-0.5 -translate-x-1/2 rounded-full bg-foreground/70"
+                                style={{ left: x(pace) }}
+                              />
+                            )}
                           </Tip>
                         )}
                       </div>
-                    );
-                  })}
-                </div>
+                    </div>
+                  );
+                })}
               </div>
-              {/* Selective label: the newest month's rate and its change, under the bars. */}
-              <span />
-              <p className="-mt-1 text-xs text-muted tabular-nums">
-                {latestPct === null ? `No goals in ${newest}` : `${latestPct.toFixed(1)}% in ${newest}`}
-                {change !== null && (
-                  <span className={change > 0 ? "text-success-700" : change < 0 ? "text-red-700" : ""}>
-                    {` · ${change > 0 ? "+" : change < 0 ? "−" : ""}${Math.abs(change).toFixed(1)} pts`}
-                  </span>
-                )}
-              </p>
-            </div>
+            </li>
           );
         })}
-      </div>
+      </ul>
       <Axis ticks={ticks} x={x} format={(t) => `${Math.round(t)}%`} />
     </div>
   );
@@ -161,7 +214,7 @@ function Grid({ ticks, x, highlight }: { ticks: number[]; x: (v: number) => stri
       {ticks.map((t) => (
         <span
           key={t}
-          className="absolute inset-y-[-4px] w-px"
+          className="absolute inset-y-1.5 w-px"
           style={{
             left: x(t),
             background: t === highlight ? "var(--viz-ink)" : "var(--viz-grid)",
@@ -175,9 +228,9 @@ function Grid({ ticks, x, highlight }: { ticks: number[]; x: (v: number) => stri
 
 function Axis({ ticks, x, format }: { ticks: number[]; x: (v: number) => string; format: (t: number) => string }) {
   return (
-    <div className="grid grid-cols-[5.5rem_1fr] gap-3" aria-hidden>
+    <div className="grid grid-cols-[2.25rem_1fr] gap-2" aria-hidden>
       <span />
-      <div className="relative h-5 text-[11px] text-muted tabular-nums">
+      <div className="relative h-5 text-xs text-muted tabular-nums">
         {ticks.map((t, i) => (
           <span
             key={t}
@@ -193,11 +246,13 @@ function Axis({ ticks, x, format }: { ticks: number[]; x: (v: number) => string;
 }
 
 // ------------------------------------------------------------
-// Weekly: small multiples, one mini column chart per person, all on the same scale.
-// A dark tick on each column marks that week's goal.
+// Weekly: small multiples, one mini column chart per person, all on the same scale and the
+// same week slots (so a week lines up across people). A dark tick marks that week's goal.
 // ------------------------------------------------------------
 export function WeeklyMultiples({ rows }: { rows: Row[] }) {
   const people = [...new Set(rows.map((r) => str(r.member)))].sort();
+  // Rows come newest week first; every chart uses the same slots, oldest -> newest.
+  const weeks = [...new Set(rows.map((r) => str(r.week_of)))].reverse();
   const top = niceMax(
     Math.max(...rows.map((r) => Math.max(num(r.checkins) ?? 0, num(r.weekly_goal) ?? 0))),
     5,
@@ -207,43 +262,45 @@ export function WeeklyMultiples({ rows }: { rows: Row[] }) {
 
   return (
     <div>
-      <ul className="mb-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted" aria-label="Legend">
-        <li className="flex items-center gap-1.5">
-          <span className="inline-block h-2.5 w-2.5 rounded-sm" style={{ background: "var(--viz-1)" }} />
-          Check-ins that week
-        </li>
+      <Legend>
+        <Swatch color="var(--viz-1)" label="Check-ins that week" />
         <li className="flex items-center gap-1.5">
           <span className="inline-block h-0.5 w-3.5" style={{ background: "var(--viz-ink)" }} />
           Weekly goal
         </li>
-        <li>Scale: 0 to {top} check-ins, same for everyone</li>
-      </ul>
-      <div className={`grid gap-4 ${people.length > 1 ? "sm:grid-cols-2" : ""}`}>
+        <li>Same scale for everyone: 0 to {top}</li>
+      </Legend>
+      <div className={`grid gap-x-8 ${people.length > 1 ? "sm:grid-cols-2" : ""}`}>
         {people.map((person) => {
-          // Rows come newest week first; draw oldest -> newest.
-          const weeks = rows.filter((r) => str(r.member) === person).reverse();
-          const latest = weeks[weeks.length - 1];
+          const mine = rows.filter((r) => str(r.member) === person);
+          const byWeek = (w: string) => mine.find((r) => str(r.week_of) === w);
+          const latest = byWeek(weeks[weeks.length - 1]);
+          const met = mine.filter((r) => (num(r.weekly_goal) ?? 0) > 0 && (num(r.checkins) ?? 0) >= (num(r.weekly_goal) ?? 0)).length;
           return (
-            <div key={person} className="rounded-md border border-divider p-3">
-              <div className="mb-2 flex items-baseline justify-between gap-2">
-                <span className="text-sm font-medium">{person}</span>
+            <section key={person} className="border-t border-divider py-4">
+              <div className="mb-2 flex flex-wrap items-baseline justify-between gap-x-3">
+                <h3 className="min-w-0 font-medium break-words">{person}</h3>
                 <span className="text-xs text-muted tabular-nums">
-                  This week: {num(latest?.checkins)} of {num(latest?.weekly_goal)}
+                  {latest ? `This week: ${num(latest.checkins)} of ${num(latest.weekly_goal)}` : "No goal this week"} · goal met{" "}
+                  {met} of {mine.length} weeks
                 </span>
               </div>
               <div className="relative" style={{ height: PLOT }}>
                 <span className="absolute inset-x-0 bottom-0 h-px" style={{ background: "var(--viz-grid)" }} />
-                <div className="absolute inset-0 flex items-end justify-around">
-                  {weeks.map((w, i) => {
+                <div className="absolute inset-0 grid" style={{ gridTemplateColumns: `repeat(${weeks.length}, minmax(0, 1fr))` }}>
+                  {weeks.map((wk, i) => {
+                    const w = byWeek(wk);
+                    if (!w) return <span key={wk} />;
                     const c = num(w.checkins) ?? 0;
                     const goal = num(w.weekly_goal) ?? 0;
                     return (
                       <Tip
-                        key={str(w.week_of)}
+                        key={wk}
                         align={edge(i, weeks.length)}
                         value={`${c} of ${goal} check-ins`}
-                        detail={`${person}, week of ${str(w.week_of)}`}
-                        className="relative flex h-full w-8 items-end justify-center"
+                        detail={`${person}, week of ${wk}`}
+                        source="checkins vs weekly_goal"
+                        className="relative mx-auto flex h-full w-11 items-end justify-center"
                       >
                         <span
                           className="block w-5 rounded-t"
@@ -251,7 +308,7 @@ export function WeeklyMultiples({ rows }: { rows: Row[] }) {
                         />
                         {goal > 0 && (
                           <span
-                            className="absolute left-0.5 right-0.5 h-0.5"
+                            className="absolute left-2 right-2 h-0.5"
                             style={{ bottom: h(goal) - 1, background: "var(--viz-ink)" }}
                           />
                         )}
@@ -260,14 +317,18 @@ export function WeeklyMultiples({ rows }: { rows: Row[] }) {
                   })}
                 </div>
               </div>
-              <div className="mt-1 flex justify-around text-[10px] text-muted" aria-hidden>
+              <div
+                className="mt-1 grid text-xs text-muted"
+                style={{ gridTemplateColumns: `repeat(${weeks.length}, minmax(0, 1fr))` }}
+                aria-hidden
+              >
                 {weeks.map((w) => (
-                  <span key={str(w.week_of)} className="w-8 whitespace-nowrap text-center">
-                    {str(w.week_of)}
+                  <span key={w} className="text-center whitespace-nowrap">
+                    {w}
                   </span>
                 ))}
               </div>
-            </div>
+            </section>
           );
         })}
       </div>
@@ -276,7 +337,7 @@ export function WeeklyMultiples({ rows }: { rows: Row[] }) {
 }
 
 // ------------------------------------------------------------
-// Streaks: a meter per goal. The light track is the longest streak ever; the fill is the
+// Streaks: a meter per goal. The outlined track is the longest streak ever; the fill is the
 // current streak. Tracks share one scale, so longer records draw longer.
 // ------------------------------------------------------------
 export function StreakMeters({ rows }: { rows: Row[] }) {
@@ -284,44 +345,43 @@ export function StreakMeters({ rows }: { rows: Row[] }) {
   const w = (v: number) => `${(Math.max(0, v) / top) * 100}%`;
   return (
     <div>
-      <ul className="mb-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted" aria-label="Legend">
-        <li className="flex items-center gap-1.5">
-          <span className="inline-block h-2.5 w-2.5 rounded-sm" style={{ background: "var(--viz-1)" }} />
-          Current streak
-        </li>
-        <li className="flex items-center gap-1.5">
-          <span className="inline-block h-2.5 w-2.5 rounded-sm" style={{ background: "var(--viz-track)" }} />
-          Longest streak
-        </li>
-      </ul>
-      <ul className="flex flex-col gap-3">
+      <Legend>
+        <Swatch color="var(--viz-1)" label="Current streak" />
+        <Swatch color="var(--viz-track)" outline="var(--viz-track-edge)" label="Longest streak" />
+      </Legend>
+      <ul className="flex flex-col divide-y divide-divider">
         {rows.map((r) => {
           const current = num(r.current_streak) ?? 0;
           const longest = num(r.longest_streak) ?? 0;
           const name = `${str(r.member)} · ${str(r.goal)}`;
           return (
-            <li key={name} className="grid gap-1 sm:grid-cols-[12rem_1fr_6.5rem] sm:items-center sm:gap-3">
-              <span className="truncate text-sm">{name}</span>
-              <Tip
-                align="left"
-                value={`${current} day${current === 1 ? "" : "s"} now`}
-                detail={`longest ${longest}, ${num(r.total_checkins)} check-ins in all`}
-                className="py-1"
-              >
-                <div className="relative h-2.5">
-                  <span
-                    className="absolute inset-y-0 left-0 rounded-r"
-                    style={{ width: w(longest), background: "var(--viz-track)" }}
-                  />
-                  <span
-                    className="absolute inset-y-0 left-0 rounded-r"
-                    style={{ width: w(current), background: "var(--viz-1)" }}
-                  />
-                </div>
-              </Tip>
-              <span className="text-xs text-muted tabular-nums sm:text-right">
-                {longest === 0 ? "No check-ins yet" : `${current} / ${longest} days`}
-              </span>
+            <li key={name} className="py-2 first:pt-0">
+              <div className="flex flex-wrap items-baseline justify-between gap-x-3">
+                <span className="min-w-0 text-sm font-medium break-words">{name}</span>
+                <span className="text-sm text-muted tabular-nums">
+                  {longest === 0 ? "No check-ins yet" : `${current} now · best ${longest} days`}
+                </span>
+              </div>
+              {longest > 0 && (
+                <Tip
+                  align="left"
+                  value={`${current} day${current === 1 ? "" : "s"} now`}
+                  detail={`longest ${longest}, ${num(r.total_checkins)} check-ins in all`}
+                  source="current_streak, longest_streak"
+                  className="flex h-11 items-center"
+                >
+                  <div className="relative h-3 w-full">
+                    <span
+                      className="absolute inset-y-0 left-0 rounded-r"
+                      style={{ width: w(longest), background: "var(--viz-track)", boxShadow: "inset 0 0 0 1px var(--viz-track-edge)" }}
+                    />
+                    <span
+                      className="absolute inset-y-0 left-0 rounded-r"
+                      style={{ width: w(current), background: "var(--viz-1)" }}
+                    />
+                  </div>
+                </Tip>
+              )}
             </li>
           );
         })}
@@ -349,20 +409,27 @@ export function WeekdayColumns({ rows }: { rows: Row[] }) {
   const top = niceMax(Math.max(...days.map((d) => d.share)), 5);
   const PLOT = 160;
   const h = (v: number) => (Math.max(0, v) / top) * PLOT;
+  const best = days.reduce((a, b) => (b.share > a.share ? b : a));
+  const worst = days.reduce((a, b) => (b.share < a.share ? b : a));
   return (
     <div>
+      <p className="mb-4 text-sm text-pretty">
+        Most check-ins land on <span className="font-semibold">{best.day}</span> ({best.share.toFixed(0)}%), the fewest on{" "}
+        <span className="font-semibold">{worst.day}</span> ({worst.share.toFixed(0)}%).
+      </p>
       <div className="relative" style={{ height: PLOT + 20 }}>
         <span className="absolute inset-x-0 h-px" style={{ bottom: 0, background: "var(--viz-grid)" }} />
-        <div className="absolute inset-0 flex items-end justify-around">
+        <div className="absolute inset-0 grid grid-cols-7">
           {days.map((d, i) => (
             <Tip
               key={d.day}
               align={edge(i, days.length)}
               value={`${d.share.toFixed(1)}% of check-ins`}
               detail={`${d.day}: ${d.checkins} check-ins by ${d.people} ${d.people === 1 ? "person" : "people"}`}
-              className="flex h-full w-10 flex-col items-center justify-end"
+              source="share_pct = day's check-ins ÷ all"
+              className="mx-auto flex h-full w-11 flex-col items-center justify-end"
             >
-              <span className="mb-1 text-[11px] text-muted tabular-nums">
+              <span className="mb-1 text-xs text-muted tabular-nums">
                 {d.checkins > 0 ? `${Math.round(d.share)}%` : ""}
               </span>
               <span
@@ -373,9 +440,9 @@ export function WeekdayColumns({ rows }: { rows: Row[] }) {
           ))}
         </div>
       </div>
-      <div className="mt-1 flex justify-around text-xs text-muted" aria-hidden>
+      <div className="mt-1 grid grid-cols-7 text-xs text-muted" aria-hidden>
         {days.map((d) => (
-          <span key={d.day} className="w-10 text-center">
+          <span key={d.day} className="text-center">
             {d.day.slice(0, 3)}
           </span>
         ))}
