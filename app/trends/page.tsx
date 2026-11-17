@@ -225,9 +225,10 @@ function Cell({ value, column }: { value: unknown; column: Column }) {
   if (Number.isNaN(n)) return <>{String(value)}</>;
   if (column.format === "pct") return <>{n.toFixed(1)}%</>;
   if (column.format === "change") {
-    // The table shows the raw rows, so no red/green here: the sign carries the direction.
-    const sign = n > 0 ? "+" : n < 0 ? "−" : "";
-    return <>{`${sign}${Math.abs(n).toFixed(1)} pts`}</>;
+    // In words: "up 5.0" / "down 23.1" (percentage points, e.g. 70% -> 47% is down 23).
+    // The table shows the raw rows, so no red/green here: the words carry the direction.
+    if (n === 0) return <span className="text-muted">same</span>;
+    return <>{`${n > 0 ? "up" : "down"} ${Math.abs(n).toFixed(1)}`}</>;
   }
   return <>{n.toLocaleString("en-US")}</>;
 }

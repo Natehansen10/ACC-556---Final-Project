@@ -87,10 +87,6 @@ function Swatch({ color, label, outline }: { color: string; label: string; outli
   );
 }
 
-function sign(n: number) {
-  return n > 0 ? "+" : n < 0 ? "−" : "";
-}
-
 // ------------------------------------------------------------
 // Month over month: one block per person, one labeled bar per month (last 3), 0..max% axis.
 // The month in progress gets a pace mark and "on pace / behind pace" instead of a red drop.
@@ -137,6 +133,10 @@ export function MonthBars({ rows, progress }: { rows: Row[]; progress: MonthProg
           const latestPct = num(latest?.completion_pct);
           const change = num(latest?.change_vs_last_month);
           const current = isCurrent(newest);
+          // The month LAG() compared against: this person's next-older row (rows are newest first).
+          const mine = rows.filter((r) => str(r.member) === person);
+          const prev = latest && mine[0] === latest ? mine[1] : undefined;
+          const prevPct = num(prev?.completion_pct);
           return (
             <li key={person} className="py-3 first:pt-0">
               <div className="mb-1.5 flex flex-wrap items-baseline justify-between gap-x-3">
@@ -152,9 +152,12 @@ export function MonthBars({ rows, progress }: { rows: Row[]; progress: MonthProg
                   ) : (
                     <>
                       <span className="font-semibold text-foreground">{latestPct.toFixed(1)}%</span>
-                      {change !== null && (
+                      {/* Compared in words with the month before (the LAG() value). */}
+                      {change !== null && prevPct !== null && (
                         <span className={change > 0 ? "text-success-700" : change < 0 ? "text-red-800" : ""}>
-                          {` · ${sign(change)}${Math.abs(change).toFixed(1)} pts`}
+                          {change === 0
+                            ? `, same as ${str(prev?.month_label)}`
+                            : `, ${change > 0 ? "up" : "down"} from ${prevPct.toFixed(1)}% in ${str(prev?.month_label)}`}
                         </span>
                       )}
                     </>
