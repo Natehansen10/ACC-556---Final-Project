@@ -181,7 +181,7 @@ Flat. Cards: 1px divider border plus a 1px-offset, 2px-blur shadow at 5%. Toolti
 - `aria-pressed` carries the state.
 
 ### Day dots
-- Seven columns, weekday label above (today labeled "Today"). Done: 24px green circle with a check. Today not yet: open navy ring. Missed: faint 8px dot. Not running: blank. Each day has screen-reader text.
+- This week, Sunday to Saturday, weekday label above (today labeled "Today"). Done: 24px green circle with a check. Today not yet: open navy ring. Missed: faint 8px dot. Later this week: light dashed ring. Not running: blank. Each day has screen-reader text. The count beside it is "x of y this week".
 
 ### Buttons
 - **Primary:** navy fill, white text, 44px tall. **Secondary:** white with a gray border. **Quiet:** navy text only, still 44px tall (e.g. "Mark yesterday done").

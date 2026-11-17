@@ -52,3 +52,12 @@ export function lastDays(today: string, n: number): string[] {
     new Date(end - (n - 1 - i) * 86_400_000).toISOString().slice(0, 10),
   );
 }
+
+// This week, Sunday through Saturday, as YYYY-MM-DD strings. Includes days after `today`.
+export function weekDays(today: string): string[] {
+  const t = utc(today);
+  const sunday = t.getTime() - t.getUTCDay() * 86_400_000;
+  return Array.from({ length: 7 }, (_, i) =>
+    new Date(sunday + i * 86_400_000).toISOString().slice(0, 10),
+  );
+}

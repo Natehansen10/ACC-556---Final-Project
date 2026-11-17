@@ -12,7 +12,7 @@ import {
   summaryClass,
 } from "@/components/ui";
 import { requireMember } from "@/lib/auth";
-import { formatDay, formatWeekday, lastDays } from "@/lib/format";
+import { formatDay, formatWeekday, weekDays } from "@/lib/format";
 import {
   getFamilyMembers,
   getMyStravaActivities,
@@ -36,7 +36,7 @@ const STRAVA_NOTICES: Record<string, { ok: boolean; text: string }> = {
 
 type Goal = { goal_id: string; title: string; frequency_per_week: number; days: TodayCell[] };
 
-// Today: your goals first (one big button each), then the family's last 7 days.
+// Today: your goals first (one big button each), then the family's week (Sunday to Saturday).
 // You can check in for today or yesterday, on your own goals only.
 export default async function TodayPage({
   searchParams,
@@ -53,7 +53,9 @@ export default async function TodayPage({
     getFamilyMembers(me.family_id),
     getTodayBoard(me.family_id, me.today),
   ]);
-  const days = lastDays(me.today, 7);
+  // This week, Sunday to Saturday. The board query returns the last 7 days, which always
+  // covers Sunday through today; later days this week are drawn as empty slots.
+  const days = weekDays(me.today);
   const goalsOf = (memberId: string) => groupByGoal(cells.filter((c) => c.member_id === memberId));
 
   const myGoals = goalsOf(me.id);
@@ -231,15 +233,17 @@ function MyGoal({
   );
 }
 
-// The last 7 days for one goal. Done = green check. Missed = a faint dot.
-// Today, not done yet = an open ring. Before the goal started = blank.
+// This week (Sunday to Saturday) for one goal. Done = green check. Missed = a faint dot.
+// Today, not done yet = an open ring. Later this week = a light dashed ring. Not running = blank.
 function DayDots({ goal, days, today }: { goal: Goal; days: string[]; today: string }) {
   return (
-    <ol className="flex shrink-0 gap-1" aria-label={`${goal.title}, last 7 days`}>
+    <ol className="flex shrink-0 gap-1 select-none" aria-label={`${goal.title}, this week`}>
       {days.map((day) => {
         const cell = goal.days.find((d) => d.day === day);
         const isToday = day === today;
-        const status = !cell?.counts
+        const status = day > today
+          ? "upcoming"
+          : !cell?.counts
           ? "not running"
           : cell.done
             ? "done"
@@ -263,6 +267,8 @@ function DayDots({ goal, days, today }: { goal: Goal; days: string[]; today: str
                 <span className="h-6 w-6 rounded-full border-2 border-accent-600" />
               ) : status === "missed" ? (
                 <span className="h-2 w-2 rounded-full bg-faint" />
+              ) : status === "upcoming" ? (
+                <span className="h-6 w-6 rounded-full border border-dashed border-neutral-300" />
               ) : null}
             </span>
             <span className="sr-only">
@@ -279,16 +285,14 @@ function freqLabel(n: number) {
   return n === 7 ? "Every day" : `${n}× a week`;
 }
 
-// "3 of 4 in the last 7 days" (plus "goal met" once it's reached).
+// "3 of 4 this week" (Sunday to Saturday), or "goal met" once it's reached.
 function countLine(g: Goal, days: string[]) {
   const done = g.days.filter((d) => days.includes(d.day) && d.done).length;
   const met = done >= g.frequency_per_week;
-  return met
-    ? `${done} in the last 7 days, goal met`
-    : `${done} of ${g.frequency_per_week} in the last 7 days`;
+  return met ? `${done} this week, goal met` : `${done} of ${g.frequency_per_week} this week`;
 }
 
-// "4× a week · 3 of 4 in the last 7 days"
+// "4× a week · 3 of 4 this week"
 function weekLine(g: Goal, days: string[]) {
   return `${freqLabel(g.frequency_per_week)} · ${countLine(g, days)}`;
 }
