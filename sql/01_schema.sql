@@ -5,7 +5,7 @@
 -- RUN ONCE. This script DROPS every table first, so it deletes ALL data, real family data included.
 -- After the first setup, never run it again: the family's real check-ins live in these tables.
 --
--- Order: 01_schema.sql -> 03_lock_down_api.sql -> 04_add_member.sql.
+-- Order: 01_schema.sql -> 03_lock_down_api.sql -> 04_add_member.sql -> 07_strava.sql.
 -- (02_remove_demo_data.sql is only for databases that were set up with the old demo data.)
 --
 -- PHASE 4 CHANGES IN ONE PARAGRAPH

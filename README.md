@@ -29,10 +29,12 @@ Plus **Sign in** (`/login`). There is no public sign-up: the admin creates accou
 | `sql/03_lock_down_api.sql` | Turns off Supabase's public table API. Run after `01`. |
 | `sql/04_add_member.sql` | Adds family members (after you create their logins) to The Hansen Family, several at once. |
 | `sql/05_verify.sql` | Eight integrity checks. |
+| `sql/07_strava.sql` | **Run once.** Adds Strava: `strava_connections`, `strava_activities`, and two columns. Deletes nothing. |
 | `sql/06_showcase_query.sql` | The "SQL I'm proud of": completion rate, `RANK()` within family, `LAG()` month over month. |
 | `proxy.ts` | Runs before every page: refreshes the login cookie, sends signed-out visitors to `/login`. |
 | `lib/auth.ts` | Who is logged in → their profile → their family, in one SQL lookup. |
 | `lib/queries.ts` | Every read the app makes, as plain SQL. |
+| `lib/strava.ts` | Strava: tokens, sync, and the auto check-in SQL. `app/strava/connect` and `app/strava/callback` handle the Strava sign-in. |
 | `app/actions.ts` | Every write: sign in/out, check in/undo, add/end/delete a goal, award a prize. |
 
 ## How it fits together
@@ -150,9 +152,49 @@ Record signed in as yourself.
 - No route-level loading skeleton. With Next.js 16.2.10, a root `loading.tsx` made Server
   Action responses hang the form on "Saving…" in production builds (reproduced, then removed).
 
-## Later: Strava (after the class)
+## Strava
 
-Strava would need its own API app, a per-person "Connect Strava" login (OAuth), a table for each
-person's tokens, and a webhook for new activities. Each activity would check in a matching goal.
-Check Strava's API terms first: they limit showing one person's Strava data to other users, so the
-safe version marks your own goal "done" without showing the activity itself to the family.
+Each person can connect their own Strava account. Activities then check in matching goals
+automatically ("Run" goals count Strava runs, "Daily walk" counts walks).
+
+**How it works**
+
+1. **Connect** (Today page, your card): you approve the app on strava.com. Strava sends back a
+   one-time code; the server trades it for tokens and saves them in `strava_connections`.
+2. **Sync**: when you open Today (at most every 10 minutes) or tap **Sync now**, the server asks
+   Strava for this month's activities and inserts the new ones into `strava_activities`
+   (`ON CONFLICT (id) DO NOTHING` on Strava's own activity id, so nothing imports twice).
+3. **Auto check-in**: each new activity whose type matches a goal's "Counts from Strava" setting
+   becomes that day's check-in, with `checkins.strava_activity_id` pointing at the activity.
+
+**Rules**
+
+| Rule | Why |
+| --- | --- |
+| Your Strava activities (name, distance, time) are shown only to you. The family sees only the check-in circle. | Strava's API terms: a person's Strava data may only be shown to that person. |
+| `Run` also matches TrailRun and VirtualRun; `Ride` matches VirtualRide, GravelRide, and so on (`sport_type LIKE '%' \|\| goal type`). | Strava has many variants of the same sport. |
+| One activity checks in one goal, once (`UNIQUE strava_activity_id`). One check-in per goal per day still holds. | No double counting. |
+| Strava can fill in any day this month, not just today or yesterday. | An activity is proof, so a missed day can count. |
+| Undoing a Strava check-in sticks: only activities that are new to the app create check-ins. | You stay in control. |
+| Minutes and distance stay in `strava_activities`; they are not copied into `checkins`. | 3NF: they depend on the activity, not the check-in. |
+
+**Setup**
+
+1. Supabase SQL Editor: run `sql/07_strava.sql` once. Do this **before** deploying this version:
+   the app reads the new columns.
+2. strava.com/settings/api: create an API application.
+   - Website: `https://acc556finalproject.vercel.app`
+   - Authorization Callback Domain: `acc556finalproject.vercel.app` (use `localhost` when testing locally)
+3. Vercel > Settings > Environment Variables: add `STRAVA_CLIENT_ID` (Config) and
+   `STRAVA_CLIENT_SECRET` (Secret) for Production, then redeploy. Without them, Strava stays hidden.
+4. New Strava apps start in **Single Player Mode**: only the app's owner can connect. To let the
+   family connect, request a higher athlete capacity through Strava's developer program form.
+   Approval isn't guaranteed and can take weeks.
+
+**Known limits**
+
+- Single Player Mode until Strava approves more athletes (see above).
+- Tokens are stored in the database as plain text. The tables are closed to the public API, and only
+  the server reads them, but a production app would encrypt them.
+- Strava's brand guidelines ask for their official "Connect with Strava" button and a "Powered by
+  Strava" mark; this version uses a plain orange button.

@@ -67,3 +67,11 @@ SELECT u.email, u.created_at
 FROM auth.users u
 LEFT JOIN public.profiles p ON p.id = u.id
 WHERE p.id IS NULL;
+
+-- CHECK 9 (after 07_strava.sql): Strava check-ins whose activity belongs to someone other than the
+-- goal's owner. Expected: 0 rows.
+SELECT c.id, c.checkin_date
+FROM public.checkins c
+JOIN public.goals g             ON g.id = c.goal_id
+JOIN public.strava_activities a ON a.id = c.strava_activity_id
+WHERE a.profile_id <> g.user_id;

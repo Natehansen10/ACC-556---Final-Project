@@ -5,6 +5,11 @@ import { redirect } from "next/navigation";
 import { getCurrentMember } from "@/lib/auth";
 import { PG_UNIQUE_VIOLATION, pgErrorCode, sql } from "@/lib/db";
 import { memberProgress } from "@/lib/queries";
+import {
+  STRAVA_SPORT_TYPES,
+  disconnectStrava as forgetStrava,
+  syncStrava,
+} from "@/lib/strava";
 import { createSupabase } from "@/lib/supabase";
 
 // Every write in the app. Two rules hold for all of them:
@@ -146,6 +151,7 @@ export async function createGoal(_prev: ActionState, formData: FormData): Promis
   const category = text(formData, "category");
   const unit = text(formData, "unit");
   const frequency = Number(text(formData, "frequency_per_week"));
+  const strava = stravaType(text(formData, "strava_sport_type"));
 
   if (title.length < 2 || title.length > 80) {
     return { ok: false, message: "Give the goal a name (2 to 80 characters)." };
@@ -156,12 +162,13 @@ export async function createGoal(_prev: ActionState, formData: FormData): Promis
   if (!Number.isInteger(frequency) || frequency < 1 || frequency > 7) {
     return { ok: false, message: "Times per week must be 1 to 7." };
   }
+  if (strava === undefined) return { ok: false, message: "Pick a Strava activity type from the list." };
 
   try {
     // The goal starts counting today, in your own timezone.
     await sql`
-      INSERT INTO public.goals (user_id, title, category, frequency_per_week, unit, start_date)
-      VALUES (${me.id}, ${title}, ${category || null}, ${frequency}, ${unit || null}, ${me.today})
+      INSERT INTO public.goals (user_id, title, category, frequency_per_week, unit, start_date, strava_sport_type)
+      VALUES (${me.id}, ${title}, ${category || null}, ${frequency}, ${unit || null}, ${me.today}, ${strava})
     `;
   } catch (err) {
     return fail(err);
@@ -216,6 +223,74 @@ export async function deleteGoal(goalId: string, _prev: ActionState): Promise<Ac
   }
   refresh();
   return { ok: true, message: "Goal deleted." };
+}
+
+// ------------------------------------------------------------
+// Strava. Connecting happens in app/strava/connect and app/strava/callback.
+// ------------------------------------------------------------
+// "" = manual only (NULL); otherwise must be one of the allowed types; undefined = invalid.
+function stravaType(value: string): string | null | undefined {
+  if (value === "") return null;
+  return (STRAVA_SPORT_TYPES as readonly string[]).includes(value) ? value : undefined;
+}
+
+// Which Strava activities count for one of your goals. Changing it only affects activities
+// imported from now on; earlier check-ins stay as they are.
+export async function setGoalStrava(
+  goalId: string,
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const me = await getCurrentMember();
+  if (!me) return SIGNED_OUT;
+  if (!UUID_RE.test(goalId)) return { ok: false, message: "Goal not found." };
+  const strava = stravaType(text(formData, "strava_sport_type"));
+  if (strava === undefined) return { ok: false, message: "Pick a Strava activity type from the list." };
+  try {
+    const rows = await sql`
+      UPDATE public.goals
+      SET strava_sport_type = ${strava}
+      WHERE id = ${goalId} AND user_id = ${me.id}
+      RETURNING id
+    `;
+    if (rows.length === 0) return { ok: false, message: "Goal not found." };
+  } catch (err) {
+    return fail(err);
+  }
+  refresh();
+  return { ok: true, message: strava ? `Strava ${strava} activities now count.` : "Manual check-ins only." };
+}
+
+export async function syncStravaNow(_prev: ActionState): Promise<ActionState> {
+  const me = await getCurrentMember();
+  if (!me) return SIGNED_OUT;
+  try {
+    const result = await syncStrava(me, true);
+    refresh();
+    if (!result) return { ok: false, message: "Strava isn't connected." };
+    return {
+      ok: true,
+      message:
+        result.imported === 0
+          ? "Up to date."
+          : `${result.imported} new ${result.imported === 1 ? "activity" : "activities"}, ${result.checkedIn} check-in${result.checkedIn === 1 ? "" : "s"}.`,
+    };
+  } catch (err) {
+    console.error(err);
+    return { ok: false, message: "Couldn't reach Strava. Try again in a minute." };
+  }
+}
+
+export async function disconnectStrava(_prev: ActionState): Promise<ActionState> {
+  const me = await getCurrentMember();
+  if (!me) return SIGNED_OUT;
+  try {
+    await forgetStrava(me.id);
+  } catch (err) {
+    return fail(err);
+  }
+  refresh();
+  return { ok: true, message: "Strava disconnected." };
 }
 
 // ------------------------------------------------------------

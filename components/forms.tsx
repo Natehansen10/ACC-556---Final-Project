@@ -2,6 +2,7 @@
 
 import { useActionState, useEffect, useRef } from "react";
 import type { ActionState } from "@/app/actions";
+import { STRAVA_SPORT_TYPES, stravaTypeLabel } from "@/lib/strava-types";
 import { Alert, buttonClass, inputClass, secondaryButtonClass } from "./ui";
 
 type FormAction = (prev: ActionState, formData: FormData) => Promise<ActionState>;
@@ -136,7 +137,11 @@ export function GoalForm({ action }: { action: FormAction }) {
           <option>Sleep</option>
         </select>
       </label>
-      <label className="grid gap-1 text-sm sm:col-span-2">
+      <label className="grid gap-1 text-sm">
+        <span className="font-medium">Counts from Strava</span>
+        <StravaTypeOptions defaultValue="" />
+      </label>
+      <label className="grid gap-1 text-sm">
         <span className="font-medium">
           Unit <span className="font-normal text-muted">(optional)</span>
         </span>
@@ -165,12 +170,14 @@ export function ActionButton({
   pendingLabel,
   confirm,
   primary = false,
+  showSuccess = primary,
 }: {
   action: ButtonAction;
   label: string;
   pendingLabel: string;
   confirm?: string;
   primary?: boolean;
+  showSuccess?: boolean; // also show the success message (errors always show)
 }) {
   const [state, formAction, pending] = useActionState(action, null);
   return (
@@ -189,7 +196,38 @@ export function ActionButton({
         {pending ? pendingLabel : label}
       </button>
       {state && !state.ok && <Alert ok={false}>{state.message}</Alert>}
-      {state && state.ok && primary && <Alert ok>{state.message}</Alert>}
+      {state && state.ok && showSuccess && <Alert ok>{state.message}</Alert>}
+    </form>
+  );
+}
+
+// The "Counts from Strava" choices. "" = manual check-ins only.
+function StravaTypeOptions({ defaultValue }: { defaultValue: string }) {
+  return (
+    <select name="strava_sport_type" defaultValue={defaultValue} className={inputClass}>
+      <option value="">No, manual only</option>
+      {STRAVA_SPORT_TYPES.map((t) => (
+        <option key={t} value={t}>
+          {stravaTypeLabel(t)}
+        </option>
+      ))}
+    </select>
+  );
+}
+
+// Change which Strava activities count for one of your goals (Goals page).
+export function StravaTypeForm({ action, value }: { action: FormAction; value: string | null }) {
+  const [state, formAction, pending] = useActionState(action, null);
+  return (
+    <form action={formAction} className="flex flex-wrap items-center gap-2 text-xs">
+      <span className="text-muted">Counts from Strava:</span>
+      <div className="w-40">
+        <StravaTypeOptions defaultValue={value ?? ""} />
+      </div>
+      <button type="submit" disabled={pending} className={secondaryButtonClass}>
+        {pending ? "Saving…" : "Save"}
+      </button>
+      {state && <span className={state.ok ? "text-success-700" : "text-red-700"}>{state.message}</span>}
     </form>
   );
 }

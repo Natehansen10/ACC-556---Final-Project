@@ -274,6 +274,7 @@ export type FamilyGoal = {
   month_target: number | null;
   month_checkins: number;
   total_checkins: number;
+  strava_sport_type: string | null;
 };
 
 export async function getFamilyGoals(familyId: string, month: string): Promise<FamilyGoal[]> {
@@ -293,7 +294,8 @@ export async function getFamilyGoals(familyId: string, month: string): Promise<F
                AND c.checkin_date >= ${month}::date
                AND c.checkin_date <  (${month}::date + INTERVAL '1 month')::date
            )::int AS month_checkins,
-           (SELECT COUNT(*) FROM public.checkins c WHERE c.goal_id = g.id)::int AS total_checkins
+           (SELECT COUNT(*) FROM public.checkins c WHERE c.goal_id = g.id)::int AS total_checkins,
+           g.strava_sport_type
     FROM public.goals g
     JOIN public.profiles p ON p.id = g.user_id
     LEFT JOIN public.v_goal_monthly_targets t
@@ -301,5 +303,51 @@ export async function getFamilyGoals(familyId: string, month: string): Promise<F
     WHERE p.family_id = ${familyId}
       AND (g.end_date IS NULL OR g.end_date >= ${month}::date)
     ORDER BY (g.end_date IS NULL) DESC, g.start_date, g.created_at
+  `;
+}
+
+// ------------------------------------------------------------
+// Strava (only ever for the logged-in person: Strava's terms say a person's
+// activities may only be shown to that person)
+// ------------------------------------------------------------
+export type StravaStatus = { connected: boolean; last_synced: string | null };
+
+export async function getStravaStatus(memberId: string): Promise<StravaStatus> {
+  await connection();
+  const [row] = await sql<{ last_synced: string | null }[]>`
+    SELECT to_char(last_synced_at AT TIME ZONE p.timezone, 'Mon FMDD, FMHH12:MI AM') AS last_synced
+    FROM public.strava_connections s
+    JOIN public.profiles p ON p.id = s.profile_id
+    WHERE s.profile_id = ${memberId}
+  `;
+  return row ? { connected: true, last_synced: row.last_synced } : { connected: false, last_synced: null };
+}
+
+export type MyStravaActivity = {
+  id: string;
+  name: string;
+  sport_type: string;
+  activity_date: string;
+  distance_km: number;
+  minutes: number;
+  counted_for: string | null; // goal title, when it became a check-in
+};
+
+export async function getMyStravaActivities(memberId: string, limit = 5): Promise<MyStravaActivity[]> {
+  await connection();
+  return sql<MyStravaActivity[]>`
+    SELECT a.id::text,
+           a.name,
+           a.sport_type,
+           a.activity_date::text,
+           ROUND(a.distance_m / 1000.0, 1)::float8 AS distance_km,
+           ROUND(a.moving_time_s / 60.0)::int      AS minutes,
+           g.title AS counted_for
+    FROM public.strava_activities a
+    LEFT JOIN public.checkins c ON c.strava_activity_id = a.id
+    LEFT JOIN public.goals g    ON g.id = c.goal_id
+    WHERE a.profile_id = ${memberId}
+    ORDER BY a.activity_date DESC, a.id DESC
+    LIMIT ${limit}
   `;
 }

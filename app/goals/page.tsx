@@ -1,5 +1,5 @@
-import { createGoal, deleteGoal, endGoal } from "@/app/actions";
-import { ActionButton, GoalForm } from "@/components/forms";
+import { createGoal, deleteGoal, endGoal, setGoalStrava } from "@/app/actions";
+import { ActionButton, GoalForm, StravaTypeForm } from "@/components/forms";
 import { Card, EmptyState, ProgressBar, SectionTitle } from "@/components/ui";
 import { requireMember } from "@/lib/auth";
 import { formatDay, formatMonth } from "@/lib/format";
@@ -113,6 +113,9 @@ function GoalList({ goals, editable = false }: { goals: FamilyGoal[]; editable?:
                   )
                 ))}
             </div>
+            {editable && g.end_date === null && (
+              <StravaTypeForm action={setGoalStrava.bind(null, g.id)} value={g.strava_sport_type} />
+            )}
             {g.month_target === null ? (
               <p className="text-xs text-muted">Not tracked this month.</p>
             ) : (
