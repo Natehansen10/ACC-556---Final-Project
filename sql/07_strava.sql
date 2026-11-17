@@ -1,4 +1,5 @@
--- ACC 556: Family Health Tracker. 07: Strava (run once, after 01). Adds to the schema; deletes nothing.
+-- ACC 556: Family Health Tracker. 07: Strava (run after 01). Adds to the schema; deletes nothing.
+-- Safe to re-run: IF NOT EXISTS skips anything that is already there.
 -- Author: Nate Hansen
 --
 -- WHAT IT ADDS
@@ -19,7 +20,7 @@
 
 BEGIN;
 
-CREATE TABLE public.strava_connections (
+CREATE TABLE IF NOT EXISTS public.strava_connections (
     profile_id     UUID PRIMARY KEY REFERENCES public.profiles(id) ON DELETE CASCADE,
     athlete_id     BIGINT NOT NULL UNIQUE,          -- Strava's id for the person; one Strava account per profile
     access_token   TEXT NOT NULL,                   -- short-lived (6 hours); refreshed with refresh_token
@@ -29,7 +30,7 @@ CREATE TABLE public.strava_connections (
     connected_at   TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE TABLE public.strava_activities (
+CREATE TABLE IF NOT EXISTS public.strava_activities (
     id            BIGINT PRIMARY KEY,               -- Strava's own activity id, so re-imports can't duplicate
     profile_id    UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
     name          TEXT NOT NULL,
@@ -41,11 +42,11 @@ CREATE TABLE public.strava_activities (
 );
 
 ALTER TABLE public.goals
-    ADD COLUMN strava_sport_type TEXT
+    ADD COLUMN IF NOT EXISTS strava_sport_type TEXT
     CHECK (strava_sport_type IN ('Any', 'Run', 'Walk', 'Ride', 'Swim', 'Hike', 'WeightTraining', 'Yoga'));
 
 ALTER TABLE public.checkins
-    ADD COLUMN strava_activity_id BIGINT UNIQUE
+    ADD COLUMN IF NOT EXISTS strava_activity_id BIGINT UNIQUE
     REFERENCES public.strava_activities(id) ON DELETE SET NULL;
 
 -- Same lock-down as 03_lock_down_api.sql: only the app's server can read these tables.
