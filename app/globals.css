@@ -1,18 +1,25 @@
 @import "tailwindcss";
 
-/* Same palette as the production app: neutral grays plus one blue accent,
-   with green reserved for "won" / completed states. */
+/* Neutral grays, one navy accent, and green reserved for "done" / "won".
+   Every pair used for text is checked for WCAG AA (4.5:1). */
 :root {
   --background: #f2f2f3;
   --foreground: #1d1f20;
-  --muted: #5d5d60;
+  --muted: #5d5d60; /* 5.9:1 on the page, 6.6:1 on white */
+  --faint: #8c8d90; /* non-text marks only (missed-day dots) */
   --surface: #ffffff;
   --divider: color-mix(in srgb, #1d1f20 14%, transparent);
+  --focus: #416180; /* focus ring, 6.5:1 on white */
+
+  /* Strava, darkened from the brand orange so white text passes AA (5.1:1). */
+  --strava: #c93b00;
+  --strava-ink: #b33400;
 
   /* Trends charts. Checked with the dataviz palette validator against the white card:
      one series hue, its lighter track step, and an ordinal (oldest -> newest) month ramp. */
   --viz-1: #2a78d6;
   --viz-track: #cde2fb;
+  --viz-track-edge: #597ea3;
   --viz-month-1: #86b6ef;
   --viz-month-2: #3987e5;
   --viz-month-3: #1c5cab;
@@ -24,8 +31,12 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-muted: var(--muted);
+  --color-faint: var(--faint);
   --color-surface: var(--surface);
   --color-divider: var(--divider);
+  --color-focus: var(--focus);
+  --color-strava: var(--strava);
+  --color-strava-ink: var(--strava-ink);
 
   --color-accent-100: #eef6ff;
   --color-accent-200: #d6ebff;
@@ -37,15 +48,71 @@
 
   --color-success-100: #e3f2e8;
   --color-success-500: #3f8f5f;
+  --color-success-600: #2f7a4d; /* fills behind white checks, 5.2:1 */
   --color-success-700: #2c6644;
 
   --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
     "Helvetica Neue", Arial, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans);
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Browser surfaces carry the palette too. */
+::selection {
+  background: var(--color-accent-200);
+  color: var(--color-accent-900);
+}
+:root {
+  accent-color: var(--color-accent-700);
+  caret-color: var(--color-accent-700);
+}
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+a {
+  text-underline-offset: 3px;
+}
+summary {
+  list-style: none;
+}
+summary::-webkit-details-marker {
+  display: none;
+}
+
+/* The one authored moment: the check mark lands when you check in.
+   Only after a tap (CheckRow adds the class), never on page load. */
+@keyframes check-pop {
+  0% {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.12);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+.check-pop {
+  animation: check-pop 420ms var(--ease-out-expo);
+}
+@media (prefers-reduced-motion: reduce) {
+  .check-pop {
+    animation: none;
+  }
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0ms !important;
+  }
 }

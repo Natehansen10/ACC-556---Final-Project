@@ -10,24 +10,36 @@ export function Card({
 }) {
   return (
     <section
-      className={`rounded-lg border border-divider bg-surface p-4 shadow-sm sm:p-5 ${className}`}
+      className={`rounded-xl border border-divider bg-surface p-4 shadow-[0_1px_2px_rgb(29_31_32/0.05)] sm:p-5 ${className}`}
     >
       {children}
     </section>
   );
 }
 
+// Page title plus one short line under it. Same on every screen.
+export function PageHeader({ title, children }: { title: string; children?: ReactNode }) {
+  return (
+    <div>
+      <h1 className="text-2xl font-semibold tracking-tight text-balance">{title}</h1>
+      {children && <p className="mt-1 text-sm text-muted text-pretty">{children}</p>}
+    </div>
+  );
+}
+
 export function SectionTitle({
   children,
   hint,
+  as: Tag = "h2",
 }: {
   children: ReactNode;
   hint?: ReactNode;
+  as?: "h2" | "h3";
 }) {
   return (
-    <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
-      <h2 className="text-base font-semibold">{children}</h2>
-      {hint && <p className="text-sm text-muted">{hint}</p>}
+    <div className="mb-3 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+      <Tag className="text-base font-semibold text-balance">{children}</Tag>
+      {hint && <p className="text-sm text-muted tabular-nums">{hint}</p>}
     </div>
   );
 }
@@ -43,11 +55,9 @@ export function EmptyState({
   action?: ReactNode;
 }) {
   return (
-    <div className="flex flex-col items-center rounded-md border border-dashed border-divider px-6 py-8 text-center">
+    <div className="flex flex-col items-center rounded-lg border border-dashed border-divider px-6 py-8 text-center">
       <p className="font-semibold">{title}</p>
-      {description && (
-        <p className="mt-1 max-w-sm text-sm text-muted">{description}</p>
-      )}
+      {description && <p className="mt-1 max-w-sm text-sm text-muted text-pretty">{description}</p>}
       {action && <div className="mt-4">{action}</div>}
     </div>
   );
@@ -58,7 +68,7 @@ export function Alert({ ok, children }: { ok: boolean; children: ReactNode }) {
     <p
       role={ok ? "status" : "alert"}
       aria-live={ok ? "polite" : "assertive"}
-      className={`rounded-md border px-3 py-2 text-sm ${
+      className={`rounded-lg border px-3 py-2 text-sm ${
         ok
           ? "border-success-500/40 bg-success-100 text-success-700"
           : "border-red-300 bg-red-50 text-red-800"
@@ -69,58 +79,130 @@ export function Alert({ ok, children }: { ok: boolean; children: ReactNode }) {
   );
 }
 
-export function ProgressBar({ value }: { value: number | null }) {
+// `pace` (0-100) draws a thin mark: where you'd be today if you were exactly on track.
+export function ProgressBar({
+  value,
+  pace,
+  label,
+}: {
+  value: number | null;
+  pace?: number;
+  label?: string;
+}) {
   const width = Math.max(0, Math.min(100, value ?? 0));
   const done = (value ?? 0) >= 100;
   return (
-    <div
-      className="h-2 w-full overflow-hidden rounded-full bg-neutral-200"
-      role="progressbar"
-      aria-valuemin={0}
-      aria-valuemax={100}
-      aria-valuenow={Math.round(width)}
-    >
+    <div className="relative">
       <div
-        className={`h-full rounded-full ${done ? "bg-success-500" : "bg-accent-600"}`}
-        style={{ width: `${width}%` }}
-      />
+        className="h-2.5 w-full overflow-hidden rounded-full bg-neutral-200"
+        role="progressbar"
+        aria-label={label}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={Math.round(width)}
+      >
+        <div
+          className={`h-full rounded-full ${done ? "bg-success-600" : "bg-accent-600"}`}
+          style={{ width: `${width}%` }}
+        />
+      </div>
+      {pace !== undefined && pace > 0 && pace < 100 && (
+        <span
+          aria-hidden
+          className="absolute -top-1 -bottom-1 w-0.5 -translate-x-1/2 rounded-full bg-foreground/70"
+          style={{ left: `${pace}%` }}
+        />
+      )}
     </div>
   );
 }
 
+export function CheckIcon({ className = "h-4 w-4" }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 20 20"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2.5}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden
+    >
+      <path d="M4.5 10.5l3.5 3.5 7.5-8" />
+    </svg>
+  );
+}
+
+export function ChevronIcon({ className = "h-4 w-4" }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 20 20"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden
+    >
+      <path d="M7.5 5l5 5-5 5" />
+    </svg>
+  );
+}
+
+// All controls are at least 44px tall (min-h-11) for phones.
 export const buttonClass =
-  "inline-flex items-center justify-center rounded-md bg-accent-800 px-4 py-2 text-sm font-medium text-white hover:bg-accent-900 disabled:cursor-not-allowed disabled:opacity-60";
+  "inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-accent-800 px-4 text-sm font-semibold text-white transition-colors hover:bg-accent-900 disabled:cursor-not-allowed disabled:opacity-60";
 
 export const secondaryButtonClass =
-  "inline-flex items-center justify-center rounded-md border border-divider bg-surface px-3 py-1.5 text-sm font-medium text-foreground hover:bg-neutral-100 disabled:cursor-not-allowed disabled:opacity-60";
+  "inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-neutral-300 bg-surface px-4 text-sm font-medium text-foreground transition-colors hover:bg-neutral-100 disabled:cursor-not-allowed disabled:opacity-60";
 
+// Text-only action (e.g. "Sign out", "Undo yesterday"), still a 44px tap target.
+export const quietButtonClass =
+  "inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg px-2 text-sm font-medium text-accent-700 transition-colors hover:bg-accent-100 disabled:cursor-not-allowed disabled:opacity-60";
+
+// 16px text on phones so iOS doesn't zoom in when the field is focused.
 export const inputClass =
-  "w-full rounded-md border border-divider bg-white px-3 py-2 text-sm focus:border-accent-600 focus:outline-none focus:ring-2 focus:ring-accent-200";
+  "w-full min-h-11 rounded-lg border border-neutral-400 bg-white px-3 text-base text-foreground placeholder:text-muted focus:border-focus focus:outline-2 focus:outline-offset-0 focus:outline-focus sm:text-sm";
 
-// Pill-style link list, used for family and month pickers.
-export function PillNav({
+// Disclosure toggle for every <details>: a 44px row with a chevron that turns when open.
+export const summaryClass =
+  "inline-flex min-h-11 cursor-pointer items-center gap-1.5 rounded-lg pr-2 text-sm font-medium text-accent-700 select-none hover:text-accent-900 [&>svg]:transition-transform [details[open]>&>svg]:rotate-90";
+
+// One-of-several switcher (report, month). Links, so every choice is a shareable URL.
+export function SegmentedNav({
   items,
   label,
+  columns,
 }: {
   items: { href: string; label: string; active: boolean }[];
   label: string;
+  columns?: number; // fixed columns; otherwise the items wrap
 }) {
   return (
-    <nav aria-label={label} className="flex flex-wrap gap-2">
-      {items.map((item) => (
-        <Link
-          key={item.href}
-          href={item.href}
-          aria-current={item.active ? "page" : undefined}
-          className={`rounded-full border px-3 py-1 text-sm ${
-            item.active
-              ? "border-accent-800 bg-accent-800 text-white"
-              : "border-divider bg-surface text-foreground hover:bg-neutral-100"
-          }`}
-        >
-          {item.label}
-        </Link>
-      ))}
+    <nav aria-label={label}>
+      <ul
+        className={`gap-1 rounded-xl bg-neutral-200/80 p-1 ${columns ? "grid" : "flex flex-wrap"}`}
+        style={columns ? { gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` } : undefined}
+      >
+        {items.map((item) => (
+          <li key={item.href} className={columns ? "min-w-0" : "flex-1"}>
+            <Link
+              href={item.href}
+              aria-current={item.active ? "page" : undefined}
+              scroll={false}
+              className={`flex min-h-11 items-center justify-center rounded-lg px-2 text-center text-sm whitespace-nowrap transition-colors ${
+                item.active
+                  ? "bg-surface font-semibold text-foreground shadow-[0_1px_3px_rgb(29_31_32/0.15)]"
+                  : "font-medium text-muted hover:bg-white/60 hover:text-foreground"
+              }`}
+            >
+              {item.label}
+            </Link>
+          </li>
+        ))}
+      </ul>
     </nav>
   );
 }
