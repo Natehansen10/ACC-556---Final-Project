@@ -71,7 +71,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           <Suspense fallback={<p>Connecting to Supabase…</p>}>
             <DbFooter />
           </Suspense>
-          <p className="mt-1">ACC 556 final project · demo families are fictional</p>
+          <p className="mt-1">ACC 556 final project</p>
         </footer>
       </body>
     </html>

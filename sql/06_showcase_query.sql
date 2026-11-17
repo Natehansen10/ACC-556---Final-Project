@@ -9,7 +9,7 @@
 --   final SELECT Two window functions, which look at other rows without collapsing them:
 --                RANK() ranks members inside their own family and month. Ties share a place.
 --                LAG()  reads the same member's rate from the previous month, to show the change.
--- Note: sample check-ins stop on Nov 16, so November rates are lower until the month fills in.
+-- Note: real check-ins start in November 2026, so "change vs last month" is empty until December.
 
 WITH goal_month AS (
     SELECT g.user_id,

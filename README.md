@@ -25,9 +25,9 @@ Plus **Sign in** (`/login`). There is no public sign-up: the admin creates accou
 | Path | What it is |
 | --- | --- |
 | `sql/01_schema.sql` | **Run once.** 6 tables + 1 view (3NF), and the one real family. Drops everything first. |
-| `sql/02_demo_data.sql` | **Re-run any time.** Reloads the fictional demo families (Parker, Clark, Davis). Never touches real data. |
+| `sql/02_remove_demo_data.sql` | One-time cleanup: removes the fictional demo families and logins from earlier versions. Never touches real data. |
 | `sql/03_lock_down_api.sql` | Turns off Supabase's public table API. Run after `01`. |
-| `sql/04_add_member.sql` | Adds one person (after you create their login) to a family. Run once per person. |
+| `sql/04_add_member.sql` | Adds family members (after you create their logins) to The Hansen Family, several at once. |
 | `sql/05_verify.sql` | Eight integrity checks. |
 | `sql/06_showcase_query.sql` | The "SQL I'm proud of": completion rate, `RANK()` within family, `LAG()` month over month. |
 | `proxy.ts` | Runs before every page: refreshes the login cookie, sends signed-out visitors to `/login`. |
@@ -71,13 +71,14 @@ running and calculates `ROUND(frequency × days_in_month / 7)`.
 ### 1. Supabase (project "ACC556 Final Project")
 
 1. **Authentication > Sign In / Providers:** turn **off** "Allow new users to sign up". Keep Email on.
-2. **SQL Editor:** run `sql/01_schema.sql`, then `sql/02_demo_data.sql`, then `sql/03_lock_down_api.sql`.
-   (`01` wipes everything. After this first time, only re-run `02` to reset the demo.)
-3. **Authentication > Users > Add user > Create new user** for each family member, plus one
-   `guest` account for the professor. Enter email + password and check **Auto Confirm User**.
-4. **SQL Editor:** run `sql/04_add_member.sql` once per person. Edit the email, name, family, and
-   role at the top. You = `admin` in The Hansen Family. The guest = `admin` in The Parker Family
-   (the demo family, so the professor sees two months of history and can award a prize).
+2. **SQL Editor:** run `sql/01_schema.sql`, then `sql/03_lock_down_api.sql`. (`01` wipes everything;
+   never run it again once the family is using the app.) If the database still has the old demo
+   data, run `sql/02_remove_demo_data.sql` once.
+3. **Authentication > Users > Add user > Create new user** for each family member. Enter email +
+   password and check **Auto Confirm User**. Give each person their password.
+4. **SQL Editor:** put everyone's email and first name in `sql/04_add_member.sql` and run it once.
+   You = `admin` (can award the prize); everyone else = `member`. Family emails are never committed
+   to this repo; keep the filled-in copy to yourself.
 
 ### 2. Vercel
 
@@ -109,29 +110,26 @@ npm run dev
 
 Open http://localhost:3000 and sign in. Checks before you commit: `npm run typecheck` and `npm run lint`.
 
-## Demo login for the professor
+## Access for the professor
 
-Sign in with the guest account (email and password are in the project writeup). It belongs to the
-fictional Parker family, with check-ins since September, so every screen has data. The guest is
-that family's admin, so they can add a goal, check in, and award October's prize (the full win
-condition). Re-running `sql/02_demo_data.sql` puts everything back.
+To be decided before Dec 9: the rubric asks that the professor can use the app without being logged
+in as me. Options: a temporary login in the family (they would see real check-ins), or a recorded
+walkthrough.
 
 ## Phase 4 video outline (2 to 3 minutes)
 
-Before recording, re-run `sql/02_demo_data.sql` so the demo is clean. Record signed in as the
-**guest** (Parker family, two months of history); sign in as yourself at the end to show the real
-family.
+Record signed in as yourself.
 
 1. **Open the app** (15s). One sentence on why: Dad's heart transplant, daily recovery habits,
    the family doing it with him. Show the sign-in page, sign in.
 2. **Show the database connection** (15s). Point at the live footer count, then show the
    `checkins` table in the Supabase Table Editor.
 3. **Win condition** (60 to 90s):
-   - Today: every member's last 7 days. Add a goal on Goals, then tap today's circle: the footer
-     count goes up by one.
-   - Leaderboard: September already has a winner. October: click **Award Oct 2026 prize**; Dana
-     Parker wins at 93.5%.
-   - Sign out, sign in as yourself: only the real Hansen family is visible.
+   - Today: every family member's last 7 days. Tap today's circle on one of your goals: it fills in
+     and the footer count goes up by one.
+   - Goals: your goals first, then everyone else's, with this month's progress.
+   - Leaderboard: the family ranked by completion rate for November, live. The first prize can be
+     awarded on Dec 1, once November is over (admins only; ties share it).
 4. **SQL you're proud of** (30 to 45s). Run `sql/06_showcase_query.sql` in the SQL Editor.
    Explain the CTEs, `RANK()` (ties share a place) and `LAG()` (change from last month).
 5. **What's left** (15 to 30s). A month-over-month Trends page, polish, the writeup, and (after
@@ -139,7 +137,11 @@ family.
 
 ## Known limits (honest list)
 
-- Accounts are created by hand in the Supabase dashboard; there's no invite email or password reset.
+- Accounts are created by hand in the Supabase dashboard; there's no invite email, password reset,
+  or change-password page.
+- Real data starts in November 2026, so there is no earlier history, and the first prize can be
+  awarded on Dec 1.
+- The professor's access is not set up yet (see above).
 - Check-ins record that a habit happened, not a measurement. Weight or blood pressure goes in the
   note for now.
 - Prizes are awarded by a button, not automatically on the 1st of the month.

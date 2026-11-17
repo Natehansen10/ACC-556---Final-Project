@@ -1,8 +1,7 @@
--- ACC 556: integrity checks. Run after 02_demo_data.sql (and any time after). Each check should return the expected result.
+-- ACC 556: integrity checks. Run any time. Each check should return the expected result.
 -- Run them one at a time in the Supabase SQL Editor (it shows only the last result).
 --
--- Phase 4: goals now have start_date and end_date, so CHECK 2 compares against start_date and
--- CHECK 3 is new. CHECK 5 (the target view) now reads goals directly.
+-- Checks 1 to 4 and 7 to 8 should return 0 rows. Checks 5 and 6 show this month's numbers to eyeball.
 
 -- CHECK 1: Check-ins with no matching goal. Expected: 0 rows.
 SELECT c.id
@@ -29,42 +28,38 @@ JOIN public.monthly_prizes pr ON pr.id = w.prize_id
 JOIN public.profiles p ON p.id = w.user_id
 WHERE p.family_id IS DISTINCT FROM pr.family_id;
 
--- CHECK 5: The calculated target. Expected: Dana's meditation shows 13 for September (old 3-per-week goal,
--- ended Sep 30), then 18 for October and 17 for November (new 4-per-week goal).
-SELECT g.title, g.start_date, g.end_date, t.month, t.frequency_per_week, t.days_in_month, t.target
+-- CHECK 5: This month's target for every running goal, from the view.
+-- Eyeball one by hand: target = ROUND(times per week x days in the month / 7).
+SELECT p.full_name, g.title, t.month, t.frequency_per_week, t.days_in_month, t.target
 FROM public.v_goal_monthly_targets t
-JOIN public.goals g ON g.id = t.goal_id
-WHERE g.title = 'Evening meditation'
-ORDER BY t.month;
+JOIN public.goals g    ON g.id = t.goal_id
+JOIN public.profiles p ON p.id = g.user_id
+WHERE t.month = date_trunc('month', CURRENT_DATE)::date
+ORDER BY p.full_name, g.title;
 
--- CHECK 6: September completion rate per member, with the prize winners marked.
--- Expected: Cole (Parker), Ngozi and Amara (Clark, a tie), and Diego (Davis) show won_prize = true.
-SELECT f.name AS family,
-       p.full_name,
-       SUM(done.checkins) AS september_checkins,
-       SUM(t.target) AS september_target,
-       ROUND(100.0 * SUM(done.checkins) / SUM(t.target), 1) AS completion_pct,
-       BOOL_OR(w.user_id IS NOT NULL) AS won_prize
+-- CHECK 6: This month's completion rate per family member (the same math as the leaderboard).
+SELECT p.full_name,
+       SUM(done.checkins) AS checkins,
+       SUM(t.target)      AS target,
+       ROUND(100.0 * SUM(done.checkins) / SUM(t.target), 1) AS completion_pct
 FROM public.profiles p
-JOIN public.families f ON f.id = p.family_id
 JOIN public.goals g ON g.user_id = p.id
-JOIN public.v_goal_monthly_targets t ON t.goal_id = g.id AND t.month = DATE '2026-09-01'
+JOIN public.v_goal_monthly_targets t
+  ON t.goal_id = g.id AND t.month = date_trunc('month', CURRENT_DATE)::date
 CROSS JOIN LATERAL (
     SELECT COUNT(*) AS checkins
     FROM public.checkins c
     WHERE c.goal_id = g.id
-      AND c.checkin_date >= DATE '2026-09-01' AND c.checkin_date < DATE '2026-10-01'
+      AND c.checkin_date >= t.month
+      AND c.checkin_date <  (t.month + INTERVAL '1 month')::date
 ) done
-LEFT JOIN public.monthly_prizes pr ON pr.family_id = f.id AND pr.month = DATE '2026-09-01'
-LEFT JOIN public.monthly_prize_winners w ON w.prize_id = pr.id AND w.user_id = p.id
-GROUP BY f.name, p.full_name
-ORDER BY f.name, completion_pct DESC;
+GROUP BY p.full_name
+ORDER BY completion_pct DESC;
 
--- CHECK 7: Demo people placed in the real family. Expected: 0 rows.
-SELECT p.id, p.full_name
-FROM public.profiles p
-WHERE p.id::text LIKE 'a1000000-%'
-  AND p.family_id = 'f0000000-0000-4000-8000-000000000001';
+-- CHECK 7: Families other than The Hansen Family. Expected: 0 rows (the app is for one family).
+SELECT f.id, f.name
+FROM public.families f
+WHERE f.id <> 'f0000000-0000-4000-8000-000000000001';
 
 -- CHECK 8: Logins that have no profile yet (they can sign in but see a "not set up" page).
 -- Expected: 0 rows once 04_add_member.sql has been run for everyone.
