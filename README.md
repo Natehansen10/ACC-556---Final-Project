@@ -187,13 +187,13 @@ automatically ("Run" goals count Strava runs, "Daily walk" counts walks).
    - Authorization Callback Domain: `acc556finalproject.vercel.app` (use `localhost` when testing locally)
 3. Vercel > Settings > Environment Variables: add `STRAVA_CLIENT_ID` (Config) and
    `STRAVA_CLIENT_SECRET` (Secret) for Production, then redeploy. Without them, Strava stays hidden.
-4. New Strava apps start in **Single Player Mode**: only the app's owner can connect. To let the
-   family connect, request a higher athlete capacity through Strava's developer program form.
-   Approval isn't guaranteed and can take weeks.
+4. Check the app's athlete limit on strava.com/settings/api. This app allows 10 athletes, enough
+   for the whole family (8). Brand-new Strava apps can start at 1 ("Single Player Mode") until
+   Strava raises the limit.
 
 **Known limits**
 
-- Single Player Mode until Strava approves more athletes (see above).
+- At most 10 people can connect (the Strava app's athlete limit).
 - Tokens are stored in the database as plain text. The tables are closed to the public API, and only
   the server reads them, but a production app would encrypt them.
 - Strava's brand guidelines ask for their official "Connect with Strava" button and a "Powered by
