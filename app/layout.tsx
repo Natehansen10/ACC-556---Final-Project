@@ -4,7 +4,6 @@ import { Suspense } from "react";
 import { signOut } from "@/app/actions";
 import { TabBar, TopNav } from "@/components/nav";
 import { getCurrentMember } from "@/lib/auth";
-import { getFamilyStats } from "@/lib/queries";
 import "./globals.css";
 
 // Link previews (iMessage, Slack, email) read these tags. The icons and the card image are
@@ -88,25 +87,6 @@ function BrandMark() {
   );
 }
 
-// Live row counts for your family, shown in the footer: proof on every page
-// that the app is reading Supabase. It ticks up when you check in.
-async function DbFooter() {
-  const me = await getCurrentMember().catch(() => null);
-  if (!me) return null;
-  const s = await getFamilyStats(me.family_id).catch(() => null);
-  if (!s) return <p>Database unavailable right now.</p>;
-  return (
-    <p className="tabular-nums">
-      Live from Supabase: {plural(s.members, "member")} · {plural(s.goals, "goal")} ·{" "}
-      {plural(s.checkins, "check-in")}
-    </p>
-  );
-}
-
-function plural(n: number, word: string) {
-  return `${n} ${word}${n === 1 ? "" : "s"}`;
-}
-
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" className="h-full antialiased">
@@ -116,10 +96,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         </Suspense>
         <main className="mx-auto w-full max-w-4xl flex-1 px-4 pt-6 pb-10">{children}</main>
         <footer className="border-t border-divider px-4 py-4 text-center text-xs text-muted">
-          <Suspense fallback={<p>Connecting to Supabase…</p>}>
-            <DbFooter />
-          </Suspense>
-          <p className="mt-1">ACC 556 final project</p>
+          <p>ACC 556 final project</p>
         </footer>
       </body>
     </html>
