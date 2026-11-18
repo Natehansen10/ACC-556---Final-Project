@@ -1,20 +1,27 @@
 -- ACC 556: the query for the Phase 4 video ("one SQL query you're proud of").
--- Every family member's completion rate for every month, their place inside their family,
--- and how much they improved or slipped since the month before.
+-- Who is winning November? Each person's check-ins against their monthly target, ranked.
+-- It returns the same numbers as the Leaderboard page.
 --
--- How it works, step by step:
---   goal_month   One row per goal per month. The target comes from the view; LEFT JOIN on check-ins keeps
---                goals with zero check-ins, so skipping a goal still counts against you.
---   member_month Adds a member's goals together for each month (a member with 2 goals = 1 row).
---   final SELECT Two window functions, which look at other rows without collapsing them:
---                RANK() ranks members inside their own family and month. Ties share a place.
---                LAG()  reads the same member's rate from the previous month, to show the change.
--- Note: real check-ins start in November 2026, so "change vs last month" is empty until December.
+-- Run it in the Supabase SQL Editor as is (no parameters). Change the month on the WHERE line
+-- to see another month.
+--
+-- Why it was tricky:
+--   1. Targets are never stored. The view v_goal_monthly_targets calculates them:
+--      times per week x days in the month / 7, rounded.
+--   2. LEFT JOIN, not JOIN. With a plain JOIN, a goal with zero check-ins disappears, and a
+--      person who skipped everything drops off the list. LEFT JOIN keeps it as 0, so skipping
+--      still counts against you.
+--   3. Two steps. Step 1 counts check-ins per goal; step 2 adds goals up per person. Done in one
+--      step, the target repeats on every check-in row and gets added up again and again,
+--      so the total comes out many times too big.
+--   4. RANK() gives tied people the same place, so ties share the prize.
+--      (If window functions are new to your audience: delete the RANK() line and keep
+--      ORDER BY completion_pct DESC. Everything else still works.)
 
-WITH goal_month AS (
+WITH goal_totals AS (
+    -- Step 1: one row per goal. Its November target, and how many check-ins it got.
     SELECT g.user_id,
            t.goal_id,
-           t.month,
            t.target,
            COUNT(c.id) AS checkins
     FROM public.v_goal_monthly_targets t
@@ -22,31 +29,17 @@ WITH goal_month AS (
     LEFT JOIN public.checkins c
            ON c.goal_id = t.goal_id
           AND c.checkin_date >= t.month
-          AND c.checkin_date <  (t.month + INTERVAL '1 month')::date
-    GROUP BY g.user_id, t.goal_id, t.month, t.target
-),
-member_month AS (
-    SELECT p.id AS user_id,
-           p.full_name,
-           f.name AS family,
-           gm.month,
-           SUM(gm.checkins) AS checkins,
-           SUM(gm.target)   AS target,
-           ROUND(100.0 * SUM(gm.checkins) / SUM(gm.target), 1) AS completion_pct
-    FROM goal_month gm
-    JOIN public.profiles p ON p.id = gm.user_id
-    JOIN public.families f ON f.id = p.family_id
-    GROUP BY p.id, p.full_name, f.name, gm.month
+          AND c.checkin_date <  t.month + INTERVAL '1 month'
+    WHERE t.month = DATE '2026-11-01'
+    GROUP BY g.user_id, t.goal_id, t.target
 )
-SELECT family,
-       to_char(month, 'Mon YYYY') AS month_label,
-       full_name,
-       checkins,
-       target,
-       completion_pct,
-       RANK() OVER (PARTITION BY family, month
-                    ORDER BY checkins::numeric / target DESC) AS place_in_family,
-       completion_pct - LAG(completion_pct) OVER (PARTITION BY user_id
-                                                  ORDER BY month) AS change_vs_last_month
-FROM member_month
-ORDER BY family, month, place_in_family, full_name;
+-- Step 2: add up each person's goals, then rank everyone by completion rate.
+SELECT p.full_name,
+       SUM(gt.checkins) AS checkins,
+       SUM(gt.target)   AS target,
+       ROUND(100.0 * SUM(gt.checkins) / SUM(gt.target), 1) AS completion_pct,
+       RANK() OVER (ORDER BY SUM(gt.checkins) * 1.0 / SUM(gt.target) DESC) AS place
+FROM goal_totals gt
+JOIN public.profiles p ON p.id = gt.user_id
+GROUP BY p.full_name
+ORDER BY completion_pct DESC, p.full_name;

@@ -31,7 +31,7 @@ Plus **Sign in** (`/login`). There is no public sign-up: the admin creates accou
 | `sql/04_add_member.sql` | Adds family members (after you create their logins) to The Hansen Family, several at once. |
 | `sql/05_verify.sql` | Eight integrity checks. |
 | `sql/07_strava.sql` | **Run once.** Adds Strava: `strava_connections`, `strava_activities`, and two columns. Deletes nothing. |
-| `sql/06_showcase_query.sql` | The "SQL I'm proud of": completion rate, `RANK()` within family, `LAG()` month over month. |
+| `sql/06_showcase_query.sql` | The "SQL I'm proud of", for the video: who is winning the month. A CTE, `LEFT JOIN`, `GROUP BY`, and `RANK()`. Runs as is in the SQL Editor. |
 | `proxy.ts` | Runs before every page: refreshes the login cookie, sends signed-out visitors to `/login`. |
 | `lib/auth.ts` | Who is logged in → their profile → their family, in one SQL lookup. |
 | `lib/queries.ts` | Every read the app makes, as plain SQL. |
@@ -121,24 +121,11 @@ To be decided before Dec 9: the rubric asks that the professor can use the app w
 in as me. Options: a temporary login in the family (they would see real check-ins), or a recorded
 walkthrough.
 
-## Phase 4 video outline (2 to 3 minutes)
+## Phase 4 video
 
-Record signed in as yourself.
-
-1. **Open the app** (15s). One sentence on why: Dad's heart transplant, daily recovery habits,
-   the family doing it with him. Show the sign-in page, sign in.
-2. **Show the database connection** (15s). Point at the live footer count, then show the
-   `checkins` table in the Supabase Table Editor.
-3. **Win condition** (60 to 90s):
-   - Today: every family member's week (Sunday to Saturday). Tap one of your goals: it turns green with a check
-     and the footer count goes up by one.
-   - Goals: your goals first, then everyone else's, with this month's progress.
-   - Leaderboard: the family ranked by completion rate for November, live. The first prize can be
-     awarded on Dec 1, once November is over (admins only; ties share it).
-4. **SQL you're proud of** (30 to 45s). Run `sql/06_showcase_query.sql` in the SQL Editor (or open
-   Trends > Streaks and walk through the SQL under the table). Explain the CTEs, `RANK()` (ties share
-   a place) and `LAG()` (change from last month), or the "gaps and islands" streak trick.
-5. **What's left** (15 to 30s). Polish, the writeup, and the professor's access.
+The full script, step by step with what to click and what to say, is in
+[`docs/VIDEO_SCRIPT.md`](docs/VIDEO_SCRIPT.md). The SQL it runs live is `sql/06_showcase_query.sql`.
+What's left after that is in [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
 ## Known limits (honest list)
 
