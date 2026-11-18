@@ -24,10 +24,6 @@ numbers on screen will be your family's real ones, not the ones in this script.
 
 ## 2. Show it's connected to Supabase (about 15 seconds)
 
-**Point at the footer: "Live from Supabase: … check-ins".** Say the number out loud.
-
-> "That count is a live SQL query against our Supabase database, run every time a page loads."
-
 **Switch to the Table Editor tab (checkins).**
 
 > "Every check-in is one row in this checkins table. The app's server runs plain SQL against
@@ -40,13 +36,9 @@ numbers on screen will be your family's real ones, not the ones in this script.
 
 **Back to the app, Today page. Tap your unchecked goal.** It turns green with a check.
 
-> "Checking in is one tap. That just inserted a row into checkins…"
+> "Checking in is one tap. That just inserted a row into checkins."
 
-**Point at the footer.**
-
-> "…and the count went up by one."
-
-*(Optional, +10 seconds: refresh the Table Editor tab to show the new row at the top.)*
+**Refresh the Table Editor tab** to show the new row at the top.
 
 **Tap Leaderboard.**
 
@@ -114,6 +106,6 @@ and say: "November's over, so I'm awarding the prize now. It's saved in the mont
 
 - **The check-in tap shows an error:** you probably already checked in today. Tap again to undo it,
   then tap once more.
-- **The footer count didn't change:** refresh the page.
-- **The SQL errors with "there is no parameter $1":** you pasted SQL from the Trends page. Use
+- **The new row isn't in the Table Editor:** refresh that tab.
+- **The SQL errors with "there is no parameter $1":** you pasted SQL from `lib/reports.ts`. Use
   `sql/06_showcase_query.sql`, which has no parameters.

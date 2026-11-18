@@ -67,24 +67,6 @@ export async function getMonths(familyId: string): Promise<string[]> {
   return rows.map((r) => r.month);
 }
 
-export type DbStats = { members: number; goals: number; checkins: number };
-
-// Footer proof that the page is live from the database: this family's row counts.
-export async function getFamilyStats(familyId: string): Promise<DbStats> {
-  await connection();
-  const [row] = await sql<DbStats[]>`
-    SELECT (SELECT COUNT(*) FROM public.profiles p WHERE p.family_id = ${familyId})::int AS members,
-           (SELECT COUNT(*) FROM public.goals g
-              JOIN public.profiles p ON p.id = g.user_id
-             WHERE p.family_id = ${familyId})::int AS goals,
-           (SELECT COUNT(*) FROM public.checkins c
-              JOIN public.goals g    ON g.id = c.goal_id
-              JOIN public.profiles p ON p.id = g.user_id
-             WHERE p.family_id = ${familyId})::int AS checkins
-  `;
-  return row;
-}
-
 // ------------------------------------------------------------
 // Leaderboard (the win condition)
 // ------------------------------------------------------------
