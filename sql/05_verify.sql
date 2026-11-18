@@ -56,10 +56,12 @@ CROSS JOIN LATERAL (
 GROUP BY p.full_name
 ORDER BY completion_pct DESC;
 
--- CHECK 7: Families other than The Hansen Family. Expected: 0 rows (the app is for one family).
+-- CHECK 7: Families other than The Hansen Family and The Demo Family (08_demo_family.sql).
+-- Expected: 0 rows.
 SELECT f.id, f.name
 FROM public.families f
-WHERE f.id <> 'f0000000-0000-4000-8000-000000000001';
+WHERE f.id NOT IN ('f0000000-0000-4000-8000-000000000001',   -- The Hansen Family
+                   'f2000000-0000-4000-8000-000000000001');  -- The Demo Family
 
 -- CHECK 8: Logins that have no profile yet (they can sign in but see a "not set up" page).
 -- Expected: 0 rows once 04_add_member.sql has been run for everyone.

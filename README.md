@@ -31,6 +31,7 @@ Plus **Sign in** (`/login`). There is no public sign-up: the admin creates accou
 | `sql/04_add_member.sql` | Adds family members (after you create their logins) to The Hansen Family, several at once. |
 | `sql/05_verify.sql` | Eight integrity checks. |
 | `sql/07_strava.sql` | **Run once.** Adds Strava: `strava_connections`, `strava_activities`, and two columns. Deletes nothing. |
+| `sql/08_demo_family.sql` | "The Demo Family": 5 fictional people, their goals, and check-ins up to today, for showing the app without real family data. Safe to re-run (it rebuilds itself and never touches The Hansen Family). |
 | `sql/06_showcase_query.sql` | The "SQL I'm proud of", for the video: who is winning the month. A CTE, `LEFT JOIN`, `GROUP BY`, and `RANK()`. Runs as is in the SQL Editor. |
 | `proxy.ts` | Runs before every page: refreshes the login cookie, sends signed-out visitors to `/login`. |
 | `lib/auth.ts` | Who is logged in → their profile → their family, in one SQL lookup. |
@@ -117,9 +118,14 @@ Open http://localhost:3000 and sign in. Checks before you commit: `npm run typec
 
 ## Access for the professor
 
-To be decided before Dec 9: the rubric asks that the professor can use the app without being logged
-in as me. Options: a temporary login in the family (they would see real check-ins), or a recorded
-walkthrough.
+The rubric asks that the professor can use the app without being logged in as me, and without
+seeing my family's real data. The plan is **The Demo Family** (`sql/08_demo_family.sql`): five
+fictional people with a month and a half of check-ins. Every query filters on the viewer's
+`family_id`, so a login in the demo family sees only the demo family.
+
+1. SQL Editor: run `sql/08_demo_family.sql`. Re-run it any time to refresh the dates.
+2. When the professor needs access: create their login (Authentication > Users > Add user, Auto
+   Confirm), then run Part 2 at the bottom of `08_demo_family.sql` with their email.
 
 ## Phase 4 video
 

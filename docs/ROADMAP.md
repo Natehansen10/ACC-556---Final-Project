@@ -6,7 +6,7 @@ Ranked by what matters most. Effort is a rough guess for one focused session eac
 
 | What | Why | Effort | Database impact |
 | --- | --- | --- | --- |
-| **Professor access: a demo family** | The rubric requires the professor to use the app without being logged in as you. A second family with fictional members and a few weeks of check-ins, plus one login, shows everything without exposing real family data. | ~1 hour | Rows only (a family, profiles, goals, check-ins) in a new `sql/08_demo_family.sql`. No schema change. Every query already filters by family. |
+| **Professor access: run the demo family, add their login** | The demo family is built (`sql/08_demo_family.sql`). Run it once in the SQL Editor. When the professor needs access, create their login and run Part 2 of that file. | 5 min | Rows only. No schema change. |
 | **Check production after the redesign** | Real Strava sync and real check-ins haven't been tested on the new UI. | 10 min | None |
 | **Award the November prize live** | The first prize can be awarded Dec 1. A good live moment for the Dec 2 and Dec 7 slots. | 1 min | One row in `monthly_prizes`, one per winner in `monthly_prize_winners`. |
 | **Write-up** | Required. Reuse the README's "How it fits together" and "The rules" sections. | 1 to 2 hours | None |
