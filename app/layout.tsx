@@ -45,8 +45,9 @@ async function Header() {
     <>
       <header className="bg-accent-900 text-white">
         <div className="mx-auto flex min-h-14 max-w-4xl items-center justify-between gap-3 px-4">
-          <Link href="/" className="min-w-0 truncate py-3 font-semibold tracking-tight">
-            {me ? me.family_name : "Family Health Tracker"}
+          <Link href="/" className="flex min-w-0 items-center gap-2.5 py-3 font-semibold tracking-tight">
+            {!me && <BrandMark />}
+            <span className="truncate">{me ? me.family_name : "Family Health Tracker"}</span>
           </Link>
           {me && (
             <div className="flex shrink-0 items-center gap-2">
@@ -69,11 +70,29 @@ async function Header() {
   );
 }
 
+// The app icon (app/icon.svg) without its navy tile: a green circle with a check.
+// Shown beside the product name when signed out.
+function BrandMark() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-6 w-6 shrink-0" aria-hidden>
+      <circle cx="12" cy="12" r="10" className="fill-success-500" />
+      <path
+        d="M7.5 12.25l3 3 6-6.5"
+        fill="none"
+        stroke="#fff"
+        strokeWidth={2.5}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 // Live row counts for your family, shown in the footer: proof on every page
 // that the app is reading Supabase. It ticks up when you check in.
 async function DbFooter() {
   const me = await getCurrentMember().catch(() => null);
-  if (!me) return <p>Family Health Tracker</p>;
+  if (!me) return <p>Every number in the app traces back to plain SQL.</p>;
   const s = await getFamilyStats(me.family_id).catch(() => null);
   if (!s) return <p>Database unavailable right now.</p>;
   return (
