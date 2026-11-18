@@ -14,16 +14,8 @@ const SHORT: Record<string, string> = {
   weekday: "Weekdays",
 };
 
-// How each chart maps to the SQL's columns: the bridge between the picture and the query.
-const CHART_KEY: Record<ChartKind, string> = {
-  monthBars: "Each bar is one row: completion_pct for one person in one month.",
-  weeklyMultiples: "Each column is one row: checkins for one person in one week. The dark line is weekly_goal.",
-  streakMeters: "Each meter is one row: the fill is current_streak, the outline is longest_streak.",
-  weekdayColumns: "Each column is one row: share_pct, that weekday's share of all check-ins.",
-};
-
-// Trends: pick a report and a person. Each report is one SQL query (lib/reports.ts);
-// the page shows the chart, how the SQL builds it, the rows, and the exact SQL.
+// Trends: pick a report and a person. Each report is one query (lib/reports.ts);
+// the page shows the chart and the rows behind it.
 export default async function TrendsPage({
   searchParams,
 }: {
@@ -37,7 +29,7 @@ export default async function TrendsPage({
   // Only accept a person from your own family; anything else means "everyone".
   const member = members.find((m) => m.id === params.member) ?? null;
 
-  const { rows, ms } = await runReport(report, me.family_id, member?.id ?? null, me.today);
+  const { rows } = await runReport(report, me.family_id, member?.id ?? null, me.today);
 
   // The month in progress (for the Monthly report's pace mark). Plain date math on "today".
   const [y, mo, d] = me.today.split("-").map(Number);
@@ -52,7 +44,7 @@ export default async function TrendsPage({
   return (
     <div className="flex flex-col gap-6">
       <PageHeader title="Trends">
-        Four reports. Each one is a single SQL query, shown in full at the bottom.
+        Four views of how the family is doing. Pick a report and a person.
       </PageHeader>
 
       <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_16rem] md:items-end">
@@ -82,12 +74,7 @@ export default async function TrendsPage({
 
       <Card>
         <div className="mb-4">
-          <div className="flex flex-wrap items-baseline justify-between gap-x-3">
-            <h2 className="text-lg font-semibold">{report.title}</h2>
-            <p className="text-xs text-muted tabular-nums">
-              {rows.length} row{rows.length === 1 ? "" : "s"} · {ms} ms
-            </p>
-          </div>
+          <h2 className="text-lg font-semibold">{report.title}</h2>
           <p className="mt-1 max-w-[60ch] text-sm text-muted text-pretty">{report.question}</p>
           {report.chart === "monthBars" && rows.length > 0 && (
             <p className="mt-2 max-w-[60ch] text-sm text-pretty">
@@ -111,19 +98,7 @@ export default async function TrendsPage({
           <>
             <Chart kind={report.chart} rows={rows} progress={progress} />
 
-            <div className="mt-5 border-t border-divider pt-4">
-              <h3 className="text-sm font-semibold">How the SQL builds this chart</h3>
-              <p className="mt-1 max-w-[60ch] text-sm text-pretty">{CHART_KEY[report.chart]}</p>
-              <ol className="mt-2 max-w-[60ch] list-decimal space-y-1 pl-5 text-sm text-muted marker:text-muted">
-                {report.explain.map((line) => (
-                  <li key={line} className="text-pretty">
-                    {line}
-                  </li>
-                ))}
-              </ol>
-            </div>
-
-            <details className="mt-4 border-t border-divider pt-2">
+            <details className="mt-5 border-t border-divider pt-2">
               <summary className={summaryClass}>
                 <ChevronIcon />
                 Show the {rows.length} row{rows.length === 1 ? "" : "s"} as a table
@@ -142,7 +117,6 @@ export default async function TrendsPage({
                           }`}
                         >
                           {c.label}
-                          <span className="block font-mono font-normal">{c.key}</span>
                         </th>
                       ))}
                     </tr>
@@ -170,27 +144,6 @@ export default async function TrendsPage({
         )}
       </Card>
 
-      <Card>
-        <h2 className="text-lg font-semibold">The SQL behind this chart</h2>
-        <p className="mt-1 text-sm text-muted text-pretty">
-          This exact text is what ran. The values are passed separately, never pasted into the SQL.
-        </p>
-        <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-sm">
-          <dt><code className="font-mono text-accent-800">$1</code></dt>
-          <dd className="text-muted">your family ({me.family_name})</dd>
-          <dt><code className="font-mono text-accent-800">$2</code></dt>
-          <dd className="text-muted">{member ? member.full_name : "NULL (everyone)"}</dd>
-          {report.usesToday && (
-            <>
-              <dt><code className="font-mono text-accent-800">$3</code></dt>
-              <dd className="text-muted">today ({me.today})</dd>
-            </>
-          )}
-        </dl>
-        <pre className="mt-4 overflow-x-auto rounded-lg bg-neutral-900 p-4 font-mono text-xs leading-relaxed whitespace-pre-wrap text-neutral-100 sm:whitespace-pre">
-          {report.sql}
-        </pre>
-      </Card>
     </div>
   );
 }

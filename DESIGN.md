@@ -1,6 +1,6 @@
 ---
 name: Family Health Tracker
-description: One family's daily health habits on one board, with the SQL behind every number.
+description: One family's daily health habits on one board.
 colors:
   ink: "#1d1f20"
   muted-ink: "#5d5d60"
@@ -120,7 +120,7 @@ A neutral gray page with white cards, a dark navy header, one navy accent for ac
 - Every control is at least 44px tall; the check-in button is 64px.
 - Navy for actions and selection; green only for completion, met targets, and prizes.
 - Done = green check, missed = faint dot, today not yet = open ring. Never color alone.
-- System sans-serif everywhere; monospace only for SQL and column names.
+- System sans-serif everywhere.
 - Plain HTML/CSS charts with their own blue ramp, separate from the navy UI accent.
 - Light mode only.
 
@@ -150,14 +150,13 @@ Cool neutrals with one desaturated navy accent and one green for success. Every 
 
 ## Typography
 
-**Body Font:** system UI sans-serif stack. **Mono Font:** system monospace stack, for SQL and column names only.
+**Body Font:** system UI sans-serif stack. **Mono Font:** system monospace stack, kept as a token; the UI does not currently show code.
 
 ### Hierarchy
 - **Headline** (600, 1.5rem, tight tracking): page titles.
 - **Title** (600, 1rem to 1.125rem): card and section titles, goal names.
 - **Body** (400, 0.875rem; 1rem in inputs on phones so iOS doesn't zoom): most text.
 - **Label** (400, 0.75rem): weekday labels, legends, axis ticks, footer. Nothing smaller than 12px.
-- **Code** (mono, 0.75rem, relaxed leading): SQL. Wraps on phones, scrolls sideways on desktop.
 
 Long text uses `text-pretty`; explanatory paragraphs cap at 60ch (about 80 characters).
 
@@ -196,18 +195,18 @@ Flat. Cards: 1px divider border plus a 1px-offset, 2px-blur shadow at 5%. Toolti
 - 10px tall, fully rounded. Navy fill, green at 100%. Optional pace mark: a thin dark line at "complete days ÷ days in the month".
 
 ### Charts (Trends)
-- Plain HTML/CSS bars, no browser JavaScript. Every mark is a 44px focusable target with a tooltip on hover, tap, and keyboard focus. The tooltip names the SQL column(s) behind the number. Under each chart: one sentence mapping marks to columns, then the query's steps, then the rows as a table, then the full SQL card.
+- Plain HTML/CSS bars, no browser JavaScript. Every mark is a 44px focusable target with a tooltip on hover, tap, and keyboard focus. Under each chart: the rows as a table, one tap away. The app does not show SQL.
 
 ### Sign-in page (front door)
 - Signed-out visitors land here, so it reads as the product's landing page. Desktop (lg+): headline, one-line pitch, and an example board on the left; the sign-in card on the right, vertically centered. Phones: headline and pitch, then the form (above the fold at 390x664), then the example board.
 - The example board reuses the day-dot marks, is `aria-hidden`, carries an "Example" tag, and uses generic goal names only. No real names, stats, or quotes.
-- Signed out, the header shows a green check mark beside "Family Health Tracker" (the app icon without its tile), and the footer says every number traces back to plain SQL.
+- Signed out, the header shows a green check mark beside "Family Health Tracker" (the app icon without its tile).
 
 ## Do's and Don'ts
 
 - **Do** keep every control at least 44px tall and every label at least 12px.
 - **Do** keep green for completion only, and never show a month in progress as a decline.
-- **Do** keep the table and the exact SQL one tap away on Trends.
+- **Do** keep the table one tap away on Trends.
 - **Don't** add a chart, component, icon, or animation library. Icons are inline SVG on a 24px grid, 1.75 stroke.
 - **Don't** nest cards, or use unicode glyphs as icons.
 - **Don't** add more motion than the check-in pop and simple color transitions.

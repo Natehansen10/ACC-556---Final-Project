@@ -103,24 +103,6 @@ export type LeaderboardRow = {
 // RANK() is a window function: it numbers members by completion rate inside
 // the family, and gives tied members the same place (two 1st places, then 3rd).
 // Members with no target that month get no place instead of a fake 0%.
-export const LEADERBOARD_SQL_TEXT = `WITH member_progress AS (
-    -- one row per family member: check-ins and target for the month
-    -- (see memberProgress in lib/queries.ts)
-)
-SELECT m.*,
-       ROUND(100.0 * m.checkins / NULLIF(m.target, 0), 1) AS pct,
-       CASE WHEN m.target > 0 THEN
-           RANK() OVER (PARTITION BY m.target > 0
-                        ORDER BY m.checkins::numeric / NULLIF(m.target, 0) DESC)
-       END AS place,
-       EXISTS (SELECT 1
-               FROM monthly_prize_winners w
-               JOIN monthly_prizes pr ON pr.id = w.prize_id
-               WHERE pr.family_id = $family AND pr.month = $month
-                 AND w.user_id = m.id) AS won
-FROM member_progress m
-ORDER BY place NULLS LAST, m.full_name;`;
-
 export async function getLeaderboard(
   familyId: string,
   month: string,

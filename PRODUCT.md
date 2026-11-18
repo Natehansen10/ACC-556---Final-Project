@@ -14,11 +14,11 @@ web
 
 ## Product Purpose
 
-Everyone in the family sets a goal, checks in each day, and sees everyone's progress on one family board. Success means people check in daily without being reminded, and Dad feels supported. It is also a database class final project: every number on screen traces back to plain SQL the student can explain.
+Everyone in the family sets a goal, checks in each day, and sees everyone's progress on one family board. Success means people check in daily without being reminded, and Dad feels supported. It is also a database class final project: every number comes from plain SQL the student can explain, though the app itself no longer shows the queries.
 
 ## Positioning
 
-A private board for one family, built around one person's recovery. Not a fitness app, not social media: no strangers, no feeds, no streak-shaming. The SQL behind each report is visible on purpose, so the app doubles as its own explanation.
+A private board for one family, built around one person's recovery. Not a fitness app, not social media: no strangers, no feeds, no streak-shaming.
 
 ## Operating Context
 
@@ -35,7 +35,7 @@ A private board for one family, built around one person's recovery. Not a fitnes
 - Goal frequency can't be edited; end the goal and add a new one. Goals with check-ins can be ended, not deleted.
 - Stack: Next.js 16 App Router, React Server Components, Server Actions, Tailwind v4, raw SQL via `postgres`. No chart library, component kit, or animation library: charts are plain HTML/CSS on purpose so they are explainable.
 - UI changes must not change SQL, schema, query text, auth, Strava logic, or Server Action behavior.
-- Trends must keep the "Show as table" view and the exact SQL card visible.
+- Trends keeps the "Show as table" view. SQL and "how this is calculated" notes are not shown in the app.
 
 ## Brand Commitments
 
@@ -51,7 +51,7 @@ A private board for one family, built around one person's recovery. Not a fitnes
 1. **Obvious on first sight.** Someone who has never seen a screen knows what to do without being told.
 2. **Checking in is the main event.** It should take one tap and feel good.
 3. **Together, not competitive.** The leaderboard motivates; it never shames.
-4. **Every number is explainable.** The SQL and the rows behind a chart are one tap away.
+4. **Every number is explainable.** The rows behind a chart are one tap away.
 5. **Simple over clever.** Fewer controls, fewer words, no heavy dependencies.
 
 ## Accessibility & Inclusion
