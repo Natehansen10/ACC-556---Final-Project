@@ -71,7 +71,7 @@ and say: "November's over, so I'm awarding the prize now. It's saved in the mont
 
 **Switch to the SQL Editor tab. Click Run.**
 
-> "This query answers the win condition directly: who's winning November? One row per person:
+> "This query answers the win condition directly: who's winning November in our family? One row per person:
 > check-ins, target, completion rate, and place. It's the same numbers as the Leaderboard."
 
 **Point at the CTE (`WITH goal_totals`).**
@@ -86,6 +86,11 @@ and say: "November's over, so I'm awarding the prize now. It's saved in the mont
 > "Second, it's a LEFT JOIN. With a regular JOIN, a goal nobody checked in on just disappears,
 > so skipping a goal would make your rate look better. LEFT JOIN keeps it as zero, so it still
 > counts against you."
+
+**Point at `WHERE p.family_id = …`.**
+
+> "And it's only my family. Every query in the app filters on the family id, so nobody ever sees
+> another family's data."
 
 **Point at the `RANK()` line.**
 
