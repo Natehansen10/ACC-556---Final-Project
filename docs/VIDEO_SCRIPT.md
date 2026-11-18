@@ -63,9 +63,9 @@ numbers on screen will be your family's real ones, not the ones in this script.
 **If you record on or after December 1:** pick **Nov 2026**, tap **Award Nov 2026 prize**, confirm,
 and say: "November's over, so I'm awarding the prize now. It's saved in the monthly_prizes table."
 
-**Tap Trends, then scroll to "The SQL behind this chart".**
+**Tap Trends, then open "Show the rows as a table" under the chart.**
 
-> "And every report on the Trends page shows the exact SQL that produced it."
+> "Trends shows each report as a chart, with the rows behind it one tap away. The SQL itself is in the editor, which I'll show next."
 
 ## 4. The SQL I'm proud of (30 to 45 seconds)
 

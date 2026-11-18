@@ -2,8 +2,7 @@ import type { ReactNode } from "react";
 
 // Trends charts. Plain HTML/CSS bars drawn on the server from the rows the report's SQL returned:
 // no chart library and no browser JavaScript. Every mark is focusable; hover, tap, or keyboard
-// focus shows a tooltip that also names the SQL column the number came from. The same numbers
-// are always in the table under the chart.
+// focus shows a tooltip with the numbers. The same numbers are always in the table under the chart.
 //
 // Colors are CSS variables from app/globals.css (--viz-*). Text never uses the series color.
 
@@ -29,19 +28,16 @@ function edge(i: number, n: number): "left" | "center" | "right" {
   return "center";
 }
 
-// A focusable hit area with a tooltip. The value leads, the detail follows, and `source`
-// names the SQL column(s) behind the number.
+// A focusable hit area with a tooltip. The value leads, the detail follows.
 function Tip({
   value,
   detail,
-  source,
   align = "center",
   className = "",
   children,
 }: {
   value: string;
   detail: string;
-  source?: string;
   align?: "center" | "left" | "right";
   className?: string;
   children: ReactNode;
@@ -49,7 +45,7 @@ function Tip({
   return (
     <div
       tabIndex={0}
-      aria-label={`${value}, ${detail}${source ? ` (${source})` : ""}`}
+      aria-label={`${value}, ${detail}`}
       className={`group relative rounded-md outline-none focus-visible:ring-2 focus-visible:ring-focus ${className}`}
     >
       {children}
@@ -61,7 +57,6 @@ function Tip({
       >
         <span className="font-semibold">{value}</span>
         <span className="text-white/80"> · {detail}</span>
-        {source && <span className="mt-0.5 block font-mono text-white/80">{source}</span>}
       </span>
     </div>
   );
@@ -180,7 +175,6 @@ export function MonthBars({ rows, progress }: { rows: Row[]; progress: MonthProg
                             align="left"
                             value={`${pct.toFixed(1)}%`}
                             detail={`${person}, ${m}${isCurrent(m) ? " so far" : ""}: ${num(r?.checkins)} of ${num(r?.target)} check-ins`}
-                            source={`completion_pct = checkins ÷ target`}
                             className="relative flex h-11 items-center"
                           >
                             <span
@@ -302,7 +296,6 @@ export function WeeklyMultiples({ rows }: { rows: Row[] }) {
                         align={edge(i, weeks.length)}
                         value={`${c} of ${goal} check-ins`}
                         detail={`${person}, week of ${wk}`}
-                        source="checkins vs weekly_goal"
                         className="relative mx-auto flex h-full w-11 items-end justify-center"
                       >
                         <span
@@ -370,7 +363,6 @@ export function StreakMeters({ rows }: { rows: Row[] }) {
                   align="left"
                   value={`${current} day${current === 1 ? "" : "s"} now`}
                   detail={`longest ${longest}, ${num(r.total_checkins)} check-ins in all`}
-                  source="current_streak, longest_streak"
                   className="flex h-11 items-center"
                 >
                   <div className="relative h-3 w-full">
@@ -435,7 +427,6 @@ export function WeekdayColumns({ rows }: { rows: Row[] }) {
               align={edge(i, days.length)}
               value={`${d.share.toFixed(1)}% of check-ins`}
               detail={`${d.day}: ${d.checkins} check-ins by ${d.people} ${d.people === 1 ? "person" : "people"}`}
-              source="share_pct = day's check-ins ÷ all"
               className="mx-auto flex h-full w-11 flex-col items-center justify-end"
             >
               <span className="mb-1 text-xs text-muted tabular-nums">

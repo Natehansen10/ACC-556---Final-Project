@@ -17,7 +17,7 @@ ranked by completion rate, and award the month's prize to the top member(s). Tie
 | **Today** (`/`) | Your goals first, then every family member's week, Sunday to Saturday: check = done, faint dot = missed. | Tap one of your goals when it's done (tap again to undo). "Mark yesterday done" and "Add a note" sit under each goal. |
 | **Goals** (`/goals`) | Your goals first, then each family member's, with this month's progress. | Add a goal, end one, or delete one that has no check-ins. |
 | **Leaderboard** (`/leaderboard`) | The win condition: everyone ranked by completion rate for a month. | A family admin awards the prize once the month is over. |
-| **Trends** (`/trends`) | Four reports, each as a chart (hover, tap, or tab to a bar for its numbers and the SQL column behind them), the steps of the query, the table of rows the SQL returned, and the exact SQL that built it: month over month, weekly, streaks, day of week. The month in progress shows "on pace / behind pace". | Pick a report and a person (or everyone). |
+| **Trends** (`/trends`) | Four reports, each as a chart (hover, tap, or tab to a bar for its numbers) with the table of rows behind it: month over month, weekly, streaks, day of week. The month in progress shows "on pace / behind pace". | Pick a report and a person (or everyone). |
 
 Plus **Sign in** (`/login`). There is no public sign-up: the admin creates accounts.
 
@@ -35,7 +35,7 @@ Plus **Sign in** (`/login`). There is no public sign-up: the admin creates accou
 | `proxy.ts` | Runs before every page: refreshes the login cookie, sends signed-out visitors to `/login`. |
 | `lib/auth.ts` | Who is logged in → their profile → their family, in one SQL lookup. |
 | `lib/queries.ts` | Every read the app makes, as plain SQL. |
-| `lib/reports.ts` | The four Trends reports: each is one SQL string, shown on the page and run exactly as shown. |
+| `lib/reports.ts` | The four Trends reports: each is one SQL string, run exactly as written. |
 | `components/charts.tsx` | The Trends charts: plain HTML/CSS bars drawn from each report's rows, no chart library and no browser JavaScript. |
 | `lib/strava.ts` | Strava: tokens, sync, and the auto check-in SQL. `app/strava/connect` and `app/strava/callback` handle the Strava sign-in. |
 | `app/actions.ts` | Every write: sign in/out, check in/undo, add/end/delete a goal, award a prize. |

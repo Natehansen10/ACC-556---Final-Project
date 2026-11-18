@@ -92,7 +92,7 @@ function BrandMark() {
 // that the app is reading Supabase. It ticks up when you check in.
 async function DbFooter() {
   const me = await getCurrentMember().catch(() => null);
-  if (!me) return <p>Every number in the app traces back to plain SQL.</p>;
+  if (!me) return null;
   const s = await getFamilyStats(me.family_id).catch(() => null);
   if (!s) return <p>Database unavailable right now.</p>;
   return (

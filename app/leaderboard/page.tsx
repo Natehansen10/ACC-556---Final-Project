@@ -4,19 +4,15 @@ import { ActionButton } from "@/components/forms";
 import {
   Card,
   CheckIcon,
-  ChevronIcon,
   EmptyState,
   PageHeader,
   ProgressBar,
-  SectionTitle,
   SegmentedNav,
   buttonClass,
-  summaryClass,
 } from "@/components/ui";
 import { formatMonth, formatShortMonth, pct } from "@/lib/format";
 import { requireMember } from "@/lib/auth";
 import {
-  LEADERBOARD_SQL_TEXT,
   getGoalBreakdown,
   getLeaderboard,
   getMonths,
@@ -121,7 +117,7 @@ export default async function LeaderboardPage({
         {rows.length === 0 ? (
           <EmptyState
             title="No one in this family yet"
-            description="The admin adds family members (sql/04_add_member.sql)."
+            description="Nate adds family members."
           />
         ) : ranked.length === 0 ? (
           <EmptyState
@@ -203,33 +199,6 @@ export default async function LeaderboardPage({
         )}
       </Card>
 
-      <Card>
-        <SectionTitle>How this is calculated</SectionTitle>
-        <ul className="max-w-[60ch] list-disc space-y-1 pl-5 text-sm text-muted text-pretty">
-          <li>
-            Monthly target = times per week × days in the month ÷ 7, rounded. The view{" "}
-            <code className="font-mono text-foreground">v_goal_monthly_targets</code> calculates it from
-            each goal&apos;s start and end dates.
-          </li>
-          <li>
-            Completion = check-ins that month ÷ target, added up across all of a member&apos;s goals.
-            A goal with zero check-ins still counts.
-          </li>
-          <li>
-            Place uses <code className="font-mono text-foreground">RANK()</code>, so tied members share a
-            place and share the prize.
-          </li>
-        </ul>
-        <details className="mt-3">
-          <summary className={summaryClass}>
-            <ChevronIcon />
-            Show the SQL
-          </summary>
-          <pre className="mt-2 overflow-x-auto rounded-lg bg-neutral-900 p-4 font-mono text-xs leading-relaxed whitespace-pre-wrap text-neutral-100 sm:whitespace-pre">
-            {LEADERBOARD_SQL_TEXT}
-          </pre>
-        </details>
-      </Card>
     </div>
   );
 }

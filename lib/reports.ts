@@ -3,7 +3,7 @@ import { connection } from "next/server";
 import { sql } from "./db";
 
 // The Trends page. Each report is ONE SQL query, stored here as plain text.
-// The page shows this exact text and runs this exact text, so what you read is what ran.
+// The app runs this exact text. It is not shown in the UI.
 //
 // Parameters are passed separately ($1, $2, $3), never pasted into the SQL string, so a
 // value can't change the query (no SQL injection):
@@ -24,7 +24,6 @@ export type Report = {
   chart: ChartKind;
   title: string;
   question: string; // the question the table answers
-  explain: string[]; // how the SQL works, in plain words
   usesToday: boolean;
   columns: Column[];
   sql: string;
@@ -36,12 +35,6 @@ export const REPORTS: Report[] = [
     chart: "monthBars",
     title: "Month over month",
     question: "How did each person do each month, where did they place, and did they improve?",
-    explain: [
-      "goal_month: one row per goal per month. The target comes from the view v_goal_monthly_targets; LEFT JOIN keeps goals with zero check-ins, so skipping a goal still counts against you.",
-      "member_month: adds each person's goals together for each month.",
-      "RANK() numbers people inside each month by completion rate. Ties share a place.",
-      "LAG() reads the same person's rate from the month before. The change is this month's % minus last month's %: 70% then 47% is \"down 23\".",
-    ],
     usesToday: false,
     columns: [
       { key: "month_label", label: "Month", format: "text" },
@@ -94,12 +87,6 @@ ORDER BY month DESC, place, member;`,
     chart: "weeklyMultiples",
     title: "Weekly",
     question: "How many check-ins did each person log each week, compared with their weekly goal?",
-    explain: [
-      "this_week finds this week's Sunday (today minus EXTRACT(DOW)). weeks: generate_series makes one row per week, Sunday to Saturday, for the last 6 weeks, so a week with no check-ins still shows up as 0.",
-      "CROSS JOIN pairs every week with every person; LEFT JOIN brings in their goals and that week's check-ins.",
-      "weekly_goal is a correlated subquery: for each person and week, it adds up the times-per-week of the goals that were running that week.",
-      "The final WHERE drops people who had no goal that week, so the table only shows people with something to track.",
-    ],
     usesToday: true,
     columns: [
       { key: "week_of", label: "Week of", format: "text" },
@@ -153,11 +140,6 @@ ORDER BY week_start DESC, member;`,
     chart: "streakMeters",
     title: "Streaks",
     question: "What is each goal's current run of days in a row, and its longest ever?",
-    explain: [
-      "The trick (\"gaps and islands\"): number each goal's check-in dates 1, 2, 3 with ROW_NUMBER(), then subtract that number from the date. Days in a row all give the same answer, so that answer labels the streak.",
-      "streaks: GROUP BY that label gives each streak's first day, last day, and length.",
-      "longest = the biggest streak. current = the streak whose last day is today or yesterday (FILTER), otherwise 0.",
-    ],
     usesToday: true,
     columns: [
       { key: "member", label: "Person", format: "text" },
@@ -203,11 +185,6 @@ ORDER BY current_streak DESC, longest_streak DESC, member, goal;`,
     chart: "weekdayColumns",
     title: "Day of week",
     question: "Which days of the week does the family check in most?",
-    explain: [
-      "GROUP BY the day of the week (DOW: Sunday = 0 ... Saturday = 6) counts check-ins per weekday, and ORDER BY the same number lists Sunday first.",
-      "COUNT(DISTINCT g.user_id) counts how many different people checked in on that weekday.",
-      "SUM(COUNT(*)) OVER () is a window over the grouped rows: the total of all weekdays, so each day's share = its count / that total.",
-    ],
     usesToday: false,
     columns: [
       { key: "weekday", label: "Day", format: "text" },
@@ -233,7 +210,7 @@ export function findReport(key: string | undefined): Report {
   return REPORTS.find((r) => r.key === key) ?? REPORTS[0];
 }
 
-// Runs the report's SQL text exactly as shown on the page. sql.unsafe() takes a plain string,
+// Runs the report's SQL text exactly as written. sql.unsafe() takes a plain string,
 // which is safe here because the strings are fixed in this file and every value is a $ parameter.
 export async function runReport(
   report: Report,
