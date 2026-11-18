@@ -202,6 +202,11 @@ Flat. Cards: 1px divider border plus a 1px-offset, 2px-blur shadow at 5%. Toolti
 - The example board reuses the day-dot marks, is `aria-hidden`, carries an "Example" tag, and uses generic goal names only. No real names, stats, or quotes.
 - Signed out, the header shows a green check mark beside "Family Health Tracker" (the app icon without its tile).
 
+### Sign-in page (front door)
+- Signed-out visitors land here, so it reads as the product's landing page. Desktop (lg+): headline, one-line pitch, and an example board on the left; the sign-in card on the right, vertically centered. Phones: headline and pitch, then the form (above the fold at 390x664), then the example board.
+- The example board reuses the day-dot marks, is `aria-hidden`, carries an "Example" tag, and uses generic goal names only. No real names, stats, or quotes.
+- Signed out, the header shows a green check mark beside "Family Health Tracker" (the app icon without its tile), and the footer says every number traces back to plain SQL.
+
 ## Do's and Don'ts
 
 - **Do** keep every control at least 44px tall and every label at least 12px.
