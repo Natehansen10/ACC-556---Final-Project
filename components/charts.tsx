@@ -184,7 +184,7 @@ export function MonthBars({ rows, progress }: { rows: Row[]; progress: MonthProg
                             {isCurrent(m) && (
                               <span
                                 aria-hidden
-                                className="absolute top-2.5 bottom-2.5 w-0.5 -translate-x-1/2 rounded-full bg-foreground/70"
+                                className="absolute top-2.5 bottom-2.5 w-0.5 -translate-x-1/2 rounded-full bg-foreground/70 outline-1 outline-surface"
                                 style={{ left: x(pace) }}
                               />
                             )}

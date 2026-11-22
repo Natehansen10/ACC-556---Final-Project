@@ -115,7 +115,7 @@ export function ProgressBar({
       {pace !== undefined && pace > 0 && pace < 100 && (
         <span
           aria-hidden
-          className="absolute -top-1 -bottom-1 w-0.5 -translate-x-1/2 rounded-full bg-foreground/70"
+          className="absolute -top-1 -bottom-1 w-0.5 -translate-x-1/2 rounded-full bg-foreground/70 outline-1 outline-surface"
           style={{ left: `${pace}%` }}
         />
       )}

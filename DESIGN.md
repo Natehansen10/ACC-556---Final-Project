@@ -252,7 +252,7 @@ Full rounding on buttons, segments, chips, day dots, place badges, progress bars
 - Every `<details>` uses the same 44px summary with a chevron that turns when open.
 
 ### Progress bar
-- 10px tall, fully rounded. Track #e6dfd3, stone fill (#4a4741), olive at 100%. Optional pace mark: a thin dark line at "complete days ÷ days in the month" that extends past the bar, so it reads on the track and on the fill.
+- 10px tall, fully rounded. Track #e6dfd3, stone fill (#4a4741), olive at 100%. Optional pace mark: a thin dark line at "complete days ÷ days in the month" with a 1px cream outline, so it reads on the track and on the charcoal fill (the outline is 9.1:1 against the fill).
 
 ### Charts (Trends)
 - Plain HTML/CSS bars, no browser JavaScript, in the ochre ramp. Every mark is a 44px focusable target with a charcoal tooltip on hover, tap, and keyboard focus. Under each chart: the rows as a table, one tap away. The app does not show SQL.
