@@ -1,6 +1,6 @@
 import { signIn } from "@/app/actions";
 import { LoginForm } from "@/components/forms";
-import { Card, CheckIcon } from "@/components/ui";
+import { Card, CheckIcon, titleClass } from "@/components/ui";
 
 // The front door: proxy.ts sends every signed-out visitor here.
 // Phones: short intro, then the form (above the fold), then the example board.
@@ -9,10 +9,10 @@ export default function LoginPage() {
   return (
     <div className="grid gap-5 sm:py-4 lg:grid-cols-[minmax(0,1fr)_22rem] lg:grid-rows-[auto_auto] lg:min-h-[calc(100dvh-12rem)] lg:content-center lg:gap-x-14 lg:gap-y-8 lg:py-6">
       <div className="lg:col-start-1 lg:row-start-1">
-        <h1 className="text-2xl font-semibold tracking-tight text-balance sm:text-3xl lg:text-4xl">
+        <h1 className="font-display text-[2.5rem] leading-[1.05] tracking-[-0.01em] text-balance sm:text-5xl lg:text-[3.5rem]">
           Small daily habits, done together.
         </h1>
-        <p className="mt-2 max-w-[60ch] text-sm text-muted text-pretty sm:text-base lg:mt-4">
+        <p className="mt-3 max-w-[60ch] text-sm text-muted text-pretty sm:text-base lg:mt-4">
           Everyone sets a daily health goal, checks in each day, and sees the whole
           family&apos;s progress on one board.
         </p>
@@ -20,7 +20,7 @@ export default function LoginPage() {
 
       <div className="lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:self-center">
         <Card>
-          <h2 className="text-lg font-semibold">Sign in</h2>
+          <h2 className={titleClass}>Sign in</h2>
           <p className="mt-1 mb-4 text-sm text-muted text-pretty">
             Use the email and password from your family account.
           </p>
@@ -67,8 +67,8 @@ function ExampleBoard() {
     <div aria-hidden className="select-none">
       <Card>
         <div className="mb-3 flex items-baseline justify-between gap-3">
-          <p className="text-base font-semibold">This week</p>
-          <p className="rounded-full bg-neutral-200/80 px-2 py-0.5 text-xs font-medium text-muted">
+          <p className={titleClass}>This week</p>
+          <p className="rounded-full bg-accent-200 px-2 py-0.5 text-xs font-medium text-muted">
             Example
           </p>
         </div>
@@ -120,11 +120,11 @@ function Dot({ mark }: { mark: Mark }) {
           <CheckIcon className="h-3.5 w-3.5" />
         </span>
       ) : mark === "today" ? (
-        <span className="h-6 w-6 rounded-full border-2 border-accent-600" />
+        <span className="h-6 w-6 rounded-full border-2 border-accent-700" />
       ) : mark === "missed" ? (
         <span className="h-2 w-2 rounded-full bg-faint" />
       ) : (
-        <span className="h-6 w-6 rounded-full border border-dashed border-neutral-300" />
+        <span className="h-6 w-6 rounded-full border border-dashed border-upcoming" />
       )}
     </span>
   );

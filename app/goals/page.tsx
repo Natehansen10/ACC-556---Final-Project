@@ -8,6 +8,7 @@ import {
   ProgressBar,
   buttonClass,
   summaryClass,
+  titleClass,
 } from "@/components/ui";
 import { requireMember } from "@/lib/auth";
 import { formatDay, formatMonth } from "@/lib/format";
@@ -36,7 +37,7 @@ export default async function GoalsPage() {
       <PageHeader title="Goals">Your progress for {formatMonth(me.month)}.</PageHeader>
 
       <Card>
-        <h2 className="mb-3 text-base font-semibold">Your goals</h2>
+        <h2 className={`${titleClass} mb-3`}>Your goals</h2>
         {myGoals.length === 0 ? (
           <EmptyState
             title="No goals yet"
@@ -50,7 +51,7 @@ export default async function GoalsPage() {
           <summary className={`${buttonClass} w-full sm:w-auto group-open/add:hidden`}>Add a goal</summary>
           <div className="flex flex-col gap-3">
             <div>
-              <h3 className="text-base font-semibold">Add a goal</h3>
+              <h3 className={titleClass}>Add a goal</h3>
               <p className="mt-1 text-sm text-muted text-pretty">
                 It counts from the 1st of this month. Times per week can&apos;t be changed later: to change
                 it, end the goal and add a new one.
@@ -63,7 +64,7 @@ export default async function GoalsPage() {
 
       {others.length > 0 && (
         <section aria-labelledby="family-goals" className="flex flex-col gap-3">
-          <h2 id="family-goals" className="text-lg font-semibold">
+          <h2 id="family-goals" className={titleClass}>
             Family
           </h2>
           <Card className="!p-0">
@@ -117,7 +118,7 @@ function GoalList({
               <p className="flex flex-wrap items-center gap-x-2 gap-y-1 font-medium">
                 <span className="break-words">{g.title}</span>
                 {ended && (
-                  <span className="rounded-full bg-neutral-200 px-2 py-0.5 text-xs font-medium text-muted">
+                  <span className="rounded-full bg-accent-200 px-2 py-0.5 text-xs font-medium text-muted">
                     Ended {formatDay(g.end_date!)}
                   </span>
                 )}
@@ -146,7 +147,7 @@ function GoalList({
                   <ChevronIcon />
                   Change this goal
                 </summary>
-                <div className="mt-1 flex flex-col gap-4 rounded-lg bg-neutral-100 p-3">
+                <div className="mt-1 flex flex-col gap-4 rounded-lg bg-background p-3">
                   {stravaConnected && !ended && (
                     <StravaTypeForm action={setGoalStrava.bind(null, g.id)} value={g.strava_sport_type} goalId={g.id} />
                   )}

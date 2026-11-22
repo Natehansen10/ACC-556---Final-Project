@@ -10,6 +10,7 @@ import {
   PageHeader,
   buttonClass,
   summaryClass,
+  titleClass,
 } from "@/components/ui";
 import { requireMember } from "@/lib/auth";
 import { formatDay, formatWeekday, weekDays } from "@/lib/format";
@@ -72,7 +73,7 @@ export default async function TodayPage({
 
       <Card>
         <div className="mb-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-          <h2 className="text-base font-semibold">Your goals</h2>
+          <h2 className={titleClass}>Your goals</h2>
           {myActive.length > 0 &&
             (allDone ? (
               <p className="inline-flex items-center gap-1.5 rounded-full bg-success-100 px-2.5 py-1 text-sm font-semibold text-success-700">
@@ -111,7 +112,7 @@ export default async function TodayPage({
 
       {others.length > 0 && (
         <section aria-labelledby="family-heading" className="flex flex-col gap-3">
-          <h2 id="family-heading" className="text-lg font-semibold">
+          <h2 id="family-heading" className={titleClass}>
             Family
           </h2>
           <Card className="!p-0">
@@ -184,7 +185,7 @@ function MyGoal({
   if (!t?.counts) {
     // Ended (or not started) but still inside the 7-day window: show it read-only.
     return (
-      <div className="flex flex-col gap-1.5 rounded-xl border border-dashed border-divider px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-1.5 rounded-xl border border-dashed border-upcoming px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="font-medium">{g.title}</p>
           <p className="text-sm text-muted">Not running today</p>
@@ -233,8 +234,8 @@ function MyGoal({
   );
 }
 
-// This week (Sunday to Saturday) for one goal. Done = green check. Missed = a faint dot.
-// Today, not done yet = an open ring. Later this week = a light dashed ring. Not running = blank.
+// This week (Sunday to Saturday) for one goal. Done = olive check. Missed = a faint dot.
+// Today, not done yet = an open charcoal ring. Later this week = a light dashed ring. Not running = blank.
 function DayDots({ goal, days, today }: { goal: Goal; days: string[]; today: string }) {
   return (
     <ol className="flex shrink-0 gap-1 select-none" aria-label={`${goal.title}, this week`}>
@@ -264,11 +265,11 @@ function DayDots({ goal, days, today }: { goal: Goal; days: string[]; today: str
                   <CheckIcon className="h-3.5 w-3.5" />
                 </span>
               ) : status === "not done yet" ? (
-                <span className="h-6 w-6 rounded-full border-2 border-accent-600" />
+                <span className="h-6 w-6 rounded-full border-2 border-accent-700" />
               ) : status === "missed" ? (
                 <span className="h-2 w-2 rounded-full bg-faint" />
               ) : status === "upcoming" ? (
-                <span className="h-6 w-6 rounded-full border border-dashed border-neutral-300" />
+                <span className="h-6 w-6 rounded-full border border-dashed border-upcoming" />
               ) : null}
             </span>
             <span className="sr-only">
@@ -328,10 +329,10 @@ async function StravaPanel({ memberId, hasGoals }: { memberId: string; hasGoals:
         {/* A plain link, not a form: the route redirects to strava.com. */}
         <a
           href="/strava/connect"
-          className={`inline-flex min-h-11 items-center rounded-lg px-4 text-sm font-semibold transition-colors ${
+          className={`inline-flex min-h-11 items-center rounded-full px-4 text-sm font-semibold transition-colors ${
             hasGoals
               ? "bg-strava text-white hover:bg-strava-ink"
-              : "border border-strava/50 text-strava-ink hover:bg-orange-50"
+              : "border border-strava/50 text-strava-ink hover:bg-strava/10"
           }`}
         >
           Connect with Strava

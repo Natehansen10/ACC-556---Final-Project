@@ -16,7 +16,7 @@ export default function Error({
 
   return (
     <div className="mx-auto flex max-w-md flex-col items-center py-16 text-center">
-      <h1 className="text-xl font-semibold">Couldn&apos;t load this page</h1>
+      <h1 className="font-display text-[2rem] leading-[1.1] text-balance">Couldn&apos;t load this page</h1>
       <p className="mt-2 text-sm text-muted">
         The database didn&apos;t answer. Check your connection and try again.
       </p>

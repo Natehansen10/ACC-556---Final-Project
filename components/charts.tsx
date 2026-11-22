@@ -51,7 +51,7 @@ function Tip({
       {children}
       <span
         role="tooltip"
-        className={`pointer-events-none absolute bottom-full z-20 mb-1.5 hidden w-max max-w-[16rem] rounded-lg bg-neutral-900 px-2.5 py-1.5 text-xs leading-snug text-white shadow-[0_4px_12px_rgb(0_0_0/0.18)] group-hover:block group-focus:block ${
+        className={`pointer-events-none absolute bottom-full z-20 mb-1.5 hidden w-max max-w-[16rem] rounded-lg bg-accent-900 px-2.5 py-1.5 text-xs leading-snug text-white shadow-[0_4px_12px_rgb(28_27_26/0.08)] group-hover:block group-focus:block ${
           align === "left" ? "left-0" : align === "right" ? "right-0" : "left-1/2 -translate-x-1/2"
         }`}
       >

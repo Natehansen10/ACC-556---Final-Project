@@ -12,7 +12,7 @@ export default async function SetupPage() {
   return (
     <div className="mx-auto max-w-md py-8">
       <Card>
-        <h1 className="text-xl font-semibold tracking-tight">Almost there</h1>
+        <h1 className="font-display text-[2rem] leading-[1.1] text-balance">Almost there</h1>
         <p className="mt-2 text-sm text-muted">
           You&apos;re signed in as <span className="font-medium text-foreground">{user.email}</span>,
           but you haven&apos;t been added to a family yet. Ask the family admin (Nate) to add you,
