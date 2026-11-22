@@ -1,10 +1,28 @@
 import type { Metadata, Viewport } from "next";
+import { Hanken_Grotesk, Instrument_Serif } from "next/font/google";
 import Link from "next/link";
 import { Suspense } from "react";
 import { signOut } from "@/app/actions";
 import { TabBar, TopNav } from "@/components/nav";
 import { getCurrentMember } from "@/lib/auth";
 import "./globals.css";
+
+// Fonts are downloaded at build time and served from this site (next/font), so the browser
+// never calls Google. Each is exposed as a CSS variable that app/globals.css maps to
+// --font-sans (all UI) and --font-display (titles only).
+const hanken = Hanken_Grotesk({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-hanken",
+  display: "swap",
+});
+const instrument = Instrument_Serif({
+  subsets: ["latin"],
+  weight: "400",
+  style: ["normal", "italic"],
+  variable: "--font-instrument",
+  display: "swap",
+});
 
 // Link previews (iMessage, Slack, email) read these tags. The icons and the card image are
 // files in app/ (favicon.ico, icon.svg, apple-icon.png, opengraph-image.png) that Next.js links
@@ -89,7 +107,7 @@ function BrandMark() {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className="h-full antialiased">
+    <html lang="en" className={`${hanken.variable} ${instrument.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col">
         <Suspense fallback={<header className="min-h-14 bg-accent-900" />}>
           <Header />
