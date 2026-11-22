@@ -15,7 +15,7 @@ ranked by completion rate, and award the month's prize to the top member(s). Tie
 | Screen | What it shows | What you do there |
 | --- | --- | --- |
 | **Today** (`/`) | Your goals first, then every family member's week, Sunday to Saturday: check = done, faint dot = missed. | Tap one of your goals when it's done (tap again to undo). "Mark yesterday done" and "Add a note" sit under each goal. |
-| **Goals** (`/goals`) | Your goals first, then each family member's, with this month's progress. | Add a goal, end one, or delete one that has no check-ins. |
+| **Goals** (`/goals`) | Your goals first, then each family member's, with this month's progress. | Add a goal, pause and resume it, end it, or delete it. |
 | **Leaderboard** (`/leaderboard`) | The win condition: everyone ranked by completion rate for a month. | A family admin awards the prize once the month is over. |
 | **Trends** (`/trends`) | Four reports, each as a chart (hover, tap, or tab to a bar for its numbers) with the table of rows behind it: month over month, weekly, streaks, day of week. The month in progress shows "on pace / behind pace". | Pick a report and a person (or everyone). |
 
@@ -31,6 +31,7 @@ Plus **Sign in** (`/login`). There is no public sign-up: the admin creates accou
 | `sql/04_add_member.sql` | Adds family members (after you create their logins) to The Hansen Family, several at once. |
 | `sql/05_verify.sql` | Eight integrity checks. |
 | `sql/07_strava.sql` | **Run once.** Adds Strava: `strava_connections`, `strava_activities`, and two columns. Deletes nothing. |
+| `sql/08_pause.sql` | **Run once.** Adds pausing: the `goal_pauses` table, and paused days come out of the view's target. Deletes nothing. Run it **before** deploying this version: the app reads the new table. |
 | `sql/06_showcase_query.sql` | The "SQL I'm proud of", for the video: who is winning the month. A CTE, `LEFT JOIN`, `GROUP BY`, and `RANK()`. Runs as is in the SQL Editor. |
 | `proxy.ts` | Runs before every page: refreshes the login cookie, sends signed-out visitors to `/login`. |
 | `lib/auth.ts` | Who is logged in → their profile → their family, in one SQL lookup. |
@@ -38,7 +39,7 @@ Plus **Sign in** (`/login`). There is no public sign-up: the admin creates accou
 | `lib/reports.ts` | The four Trends reports: each is one SQL string, run exactly as written. |
 | `components/charts.tsx` | The Trends charts: plain HTML/CSS bars drawn from each report's rows, no chart library and no browser JavaScript. |
 | `lib/strava.ts` | Strava: tokens, sync, and the auto check-in SQL. `app/strava/connect` and `app/strava/callback` handle the Strava sign-in. |
-| `app/actions.ts` | Every write: sign in/out, check in/undo, add/end/delete a goal, award a prize. |
+| `app/actions.ts` | Every write: sign in/out, check in/undo, add/pause/resume/end/delete a goal, award a prize. |
 
 ## How it fits together
 
@@ -68,7 +69,8 @@ running and calculates `ROUND(frequency × days_in_month / 7)`.
 | One check-in per goal per day (`UNIQUE (goal_id, checkin_date)`). | No double counting. |
 | A goal's times-per-week can't be edited. To change it, end the goal and add a new one. | Old months keep the frequency they had, with no snapshot table. |
 | A goal starts on the 1st of the month it's created in and counts the full month, every month it runs. | One formula, easy to check by hand; the start date matches the target. |
-| A goal with check-ins can be ended, not deleted. A goal with none can be deleted. | History stays; mistakes are easy to undo. |
+| Pausing a goal keeps its check-ins. Paused days come out of the month's target (`goal_pauses` holds each pause's dates). | A break doesn't hurt your rate, and past months never change. |
+| Ending a goal is permanent and keeps its history. Deleting removes the goal and its check-ins. | Three clear choices: take a break, stop, or erase. |
 | Only a family `admin` can award the prize, once the month is over. Ties share it. | `RANK()` gives tied members the same place. |
 
 ## One-time setup

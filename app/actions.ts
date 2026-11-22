@@ -70,10 +70,12 @@ export async function signOut() {
 // ------------------------------------------------------------
 async function checkDay(memberId: string, goalId: string, date: string) {
   const [goal] = await sql<
-    { start_date: string; end_date: string | null; today: string; yesterday: string }[]
+    { start_date: string; end_date: string | null; paused: boolean; today: string; yesterday: string }[]
   >`
     SELECT g.start_date::text,
            g.end_date::text,
+           EXISTS (SELECT 1 FROM public.goal_pauses gp
+                   WHERE gp.goal_id = g.id AND gp.resumed_on IS NULL) AS paused,
            (now() AT TIME ZONE p.timezone)::date::text       AS today,
            ((now() AT TIME ZONE p.timezone)::date - 1)::text AS yesterday
     FROM public.goals g
@@ -81,6 +83,7 @@ async function checkDay(memberId: string, goalId: string, date: string) {
     WHERE g.id = ${goalId} AND g.user_id = ${memberId}
   `;
   if (!goal) return "That isn't one of your goals.";
+  if (goal.paused) return "That goal is paused. Resume it on the Goals page first.";
   if (date !== goal.today && date !== goal.yesterday) {
     return "You can only check in for today or yesterday.";
   }
@@ -186,8 +189,8 @@ export async function createGoal(_prev: ActionState, formData: FormData): Promis
 }
 
 // Ending a goal sets end_date to today. It still counts for this month and
-// every earlier month, so history stays the same. There is no "resume":
-// to change a goal, end it and add a new one.
+// every earlier month, so history stays the same. Ending is permanent
+// (pausing is the one you can undo): to change a goal, end it and add a new one.
 export async function endGoal(goalId: string, _prev: ActionState): Promise<ActionState> {
   const me = await getCurrentMember();
   if (!me) return SIGNED_OUT;
@@ -209,8 +212,78 @@ export async function endGoal(goalId: string, _prev: ActionState): Promise<Actio
   return { ok: true, message: "Goal ended." };
 }
 
-// A goal with no check-ins can be deleted outright (for example, one added by
-// mistake). A goal with check-ins can only be ended, so its history stays.
+// Pausing adds a goal_pauses row starting today. Check-ins are kept. From today the goal is off
+// the Today board, Strava stops checking it in, and paused days come out of the month's target
+// (the view does that math). Earlier days and months are untouched.
+export async function pauseGoal(goalId: string, _prev: ActionState): Promise<ActionState> {
+  const me = await getCurrentMember();
+  if (!me) return SIGNED_OUT;
+  if (!UUID_RE.test(goalId)) return { ok: false, message: "Goal not found." };
+  try {
+    const rows = await sql`
+      INSERT INTO public.goal_pauses (goal_id, paused_on)
+      SELECT g.id, GREATEST(${me.today}::date, g.start_date)
+      FROM public.goals g
+      WHERE g.id = ${goalId}
+        AND g.user_id = ${me.id}
+        AND g.end_date IS NULL
+        AND NOT EXISTS (SELECT 1 FROM public.goal_pauses gp
+                        WHERE gp.goal_id = g.id AND gp.resumed_on IS NULL)
+      RETURNING id
+    `;
+    if (rows.length === 0) return { ok: false, message: "That goal is already paused or has ended." };
+  } catch (err) {
+    if (pgErrorCode(err) === PG_UNIQUE_VIOLATION) {
+      return { ok: false, message: "That goal is already paused." };
+    }
+    return fail(err);
+  }
+  refresh();
+  return { ok: true, message: "Goal paused." };
+}
+
+// Resuming closes the open pause: the goal counts again from today. Resuming on the same day
+// it was paused removes the pause, as if it never happened.
+export async function resumeGoal(goalId: string, _prev: ActionState): Promise<ActionState> {
+  const me = await getCurrentMember();
+  if (!me) return SIGNED_OUT;
+  if (!UUID_RE.test(goalId)) return { ok: false, message: "Goal not found." };
+  try {
+    const resumed = await sql.begin(async (tx) => {
+      const sameDay = await tx`
+        DELETE FROM public.goal_pauses gp
+        USING public.goals g
+        WHERE g.id = gp.goal_id
+          AND g.id = ${goalId}
+          AND g.user_id = ${me.id}
+          AND gp.resumed_on IS NULL
+          AND gp.paused_on >= ${me.today}::date
+        RETURNING gp.id
+      `;
+      if (sameDay.length > 0) return true;
+      const rows = await tx`
+        UPDATE public.goal_pauses gp
+        SET resumed_on = ${me.today}::date
+        FROM public.goals g
+        WHERE g.id = gp.goal_id
+          AND g.id = ${goalId}
+          AND g.user_id = ${me.id}
+          AND gp.resumed_on IS NULL
+        RETURNING gp.id
+      `;
+      return rows.length > 0;
+    });
+    if (!resumed) return { ok: false, message: "That goal isn't paused." };
+  } catch (err) {
+    return fail(err);
+  }
+  refresh();
+  return { ok: true, message: "Goal resumed." };
+}
+
+// Deleting removes the goal and everything that hangs off it: its check-ins and pauses go with
+// it (ON DELETE CASCADE). It can't be undone, and past months are recalculated without it.
+// Prizes already awarded stay. To stop a goal but keep its history, pause or end it instead.
 export async function deleteGoal(goalId: string, _prev: ActionState): Promise<ActionState> {
   const me = await getCurrentMember();
   if (!me) return SIGNED_OUT;
@@ -220,12 +293,9 @@ export async function deleteGoal(goalId: string, _prev: ActionState): Promise<Ac
       DELETE FROM public.goals g
       WHERE g.id = ${goalId}
         AND g.user_id = ${me.id}
-        AND NOT EXISTS (SELECT 1 FROM public.checkins c WHERE c.goal_id = g.id)
       RETURNING g.id
     `;
-    if (rows.length === 0) {
-      return { ok: false, message: "Goals with check-ins can't be deleted. End it instead." };
-    }
+    if (rows.length === 0) return { ok: false, message: "Goal not found." };
   } catch (err) {
     return fail(err);
   }

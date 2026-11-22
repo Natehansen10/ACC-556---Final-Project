@@ -188,7 +188,7 @@ export type TodayCell = {
   title: string;
   frequency_per_week: number;
   day: string;
-  counts: boolean; // false = before the goal started or after it ended
+  counts: boolean; // false = before the goal started, after it ended, or while it was paused
   done: boolean;
   note: string | null;
 };
@@ -205,7 +205,11 @@ export async function getTodayBoard(familyId: string, today: string): Promise<To
            g.frequency_per_week,
            d.day::date::text AS day,
            (d.day::date >= g.start_date
-            AND (g.end_date IS NULL OR d.day::date <= g.end_date)) AS counts,
+            AND (g.end_date IS NULL OR d.day::date <= g.end_date)
+            AND NOT EXISTS (SELECT 1 FROM public.goal_pauses gp
+                            WHERE gp.goal_id = g.id
+                              AND gp.paused_on <= d.day::date
+                              AND (gp.resumed_on IS NULL OR gp.resumed_on > d.day::date))) AS counts,
            (c.id IS NOT NULL) AS done,
            c.note
     FROM public.goals g
@@ -219,6 +223,9 @@ export async function getTodayBoard(familyId: string, today: string): Promise<To
     WHERE p.family_id = ${familyId}
       AND g.start_date <= ${today}::date
       AND (g.end_date IS NULL OR g.end_date >= ${today}::date - 6)
+      -- A goal that is paused right now is off the board until it's resumed.
+      AND NOT EXISTS (SELECT 1 FROM public.goal_pauses gp
+                      WHERE gp.goal_id = g.id AND gp.resumed_on IS NULL)
     ORDER BY g.start_date, g.created_at, d.day
   `;
 }
@@ -235,6 +242,7 @@ export type FamilyGoal = {
   frequency_per_week: number;
   start_date: string;
   end_date: string | null;
+  paused_on: string | null; // set while the goal is paused
   month_target: number | null;
   month_checkins: number;
   total_checkins: number;
@@ -252,6 +260,8 @@ export async function getFamilyGoals(familyId: string, month: string): Promise<F
            g.frequency_per_week,
            g.start_date::text,
            g.end_date::text,
+           (SELECT gp.paused_on::text FROM public.goal_pauses gp
+             WHERE gp.goal_id = g.id AND gp.resumed_on IS NULL) AS paused_on,
            t.target AS month_target,
            (SELECT COUNT(*) FROM public.checkins c
              WHERE c.goal_id = g.id
@@ -266,7 +276,10 @@ export async function getFamilyGoals(familyId: string, month: string): Promise<F
            ON t.goal_id = g.id AND t.month = ${month}
     WHERE p.family_id = ${familyId}
       AND (g.end_date IS NULL OR g.end_date >= ${month}::date)
-    ORDER BY (g.end_date IS NULL) DESC, g.start_date, g.created_at
+    ORDER BY (g.end_date IS NULL) DESC,
+             EXISTS (SELECT 1 FROM public.goal_pauses gp
+                      WHERE gp.goal_id = g.id AND gp.resumed_on IS NULL),   -- paused after active
+             g.start_date, g.created_at
   `;
 }
 

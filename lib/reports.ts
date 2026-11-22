@@ -114,7 +114,12 @@ member_week AS (
             FROM public.goals g2
             WHERE g2.user_id = p.id
               AND g2.start_date <= w.week_start + 6
-              AND (g2.end_date IS NULL OR g2.end_date >= w.week_start)) AS weekly_goal
+              AND (g2.end_date IS NULL OR g2.end_date >= w.week_start)
+              -- a goal paused for the whole week is not part of that week's goal
+              AND NOT EXISTS (SELECT 1 FROM public.goal_pauses gp
+                              WHERE gp.goal_id = g2.id
+                                AND gp.paused_on <= w.week_start
+                                AND (gp.resumed_on IS NULL OR gp.resumed_on > w.week_start + 6))) AS weekly_goal
     FROM weeks w
     CROSS JOIN public.profiles p
     LEFT JOIN public.goals g ON g.user_id = p.id

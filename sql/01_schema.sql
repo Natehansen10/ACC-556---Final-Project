@@ -5,7 +5,7 @@
 -- RUN ONCE. This script DROPS every table first, so it deletes ALL data, real family data included.
 -- After the first setup, never run it again: the family's real check-ins live in these tables.
 --
--- Order: 01_schema.sql -> 03_lock_down_api.sql -> 04_add_member.sql -> 07_strava.sql.
+-- Order: 01_schema.sql -> 03_lock_down_api.sql -> 04_add_member.sql -> 07_strava.sql -> 08_pause.sql.
 -- (02_remove_demo_data.sql is only for databases that were set up with the old demo data.)
 --
 -- PHASE 4 CHANGES IN ONE PARAGRAPH
@@ -36,6 +36,7 @@ DROP TABLE IF EXISTS public.monthly_prize_winners CASCADE;
 DROP TABLE IF EXISTS public.monthly_prizes CASCADE;
 DROP TABLE IF EXISTS public.checkins CASCADE;
 DROP TABLE IF EXISTS public.goal_monthly_targets CASCADE;   -- Removed in Phase 4; dropped here so old copies go away.
+DROP TABLE IF EXISTS public.goal_pauses CASCADE;            -- Added by 08_pause.sql.
 DROP TABLE IF EXISTS public.goals CASCADE;
 DROP TABLE IF EXISTS public.profiles CASCADE;
 DROP TABLE IF EXISTS public.families CASCADE;
