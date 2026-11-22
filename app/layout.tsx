@@ -1,10 +1,28 @@
 import type { Metadata, Viewport } from "next";
+import { Hanken_Grotesk, Instrument_Serif } from "next/font/google";
 import Link from "next/link";
 import { Suspense } from "react";
 import { signOut } from "@/app/actions";
 import { TabBar, TopNav } from "@/components/nav";
 import { getCurrentMember } from "@/lib/auth";
 import "./globals.css";
+
+// Fonts are downloaded at build time and served from this site (next/font), so the browser
+// never calls Google. Each is exposed as a CSS variable that app/globals.css maps to
+// --font-sans (all UI) and --font-display (titles only).
+const hanken = Hanken_Grotesk({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-hanken",
+  display: "swap",
+});
+const instrument = Instrument_Serif({
+  subsets: ["latin"],
+  weight: "400",
+  style: ["normal", "italic"],
+  variable: "--font-instrument",
+  display: "swap",
+});
 
 // Link previews (iMessage, Slack, email) read these tags. The icons and the card image are
 // files in app/ (favicon.ico, icon.svg, apple-icon.png, opengraph-image.png) that Next.js links
@@ -33,29 +51,29 @@ export const metadata: Metadata = {
 // viewport-fit=cover lets the phone tab bar sit above the home indicator (safe-area inset).
 export const viewport: Viewport = {
   viewportFit: "cover",
-  themeColor: "#1d2d3d",
+  themeColor: "#f7f1e8",
 };
 
-// Header: family name, the four pages (desktop), who's signed in. On phones the
+// Header: cream like the page with a hairline under it. Family name (serif), the four pages (desktop), who's signed in. On phones the
 // pages move to a tab bar at the bottom. Hidden pieces on /login and /setup.
 async function Header() {
   const me = await getCurrentMember().catch(() => null);
   return (
     <>
-      <header className="bg-accent-900 text-white">
+      <header className="border-b border-divider bg-background text-foreground">
         <div className="mx-auto flex min-h-14 max-w-4xl items-center justify-between gap-3 px-4">
-          <Link href="/" className="flex min-w-0 items-center gap-2.5 py-3 font-semibold tracking-tight">
+          <Link href="/" className="flex min-w-0 items-center gap-2.5 py-3 font-display text-[1.3rem] leading-tight">
             {!me && <BrandMark />}
             <span className="truncate">{me ? me.family_name : "Family Health Tracker"}</span>
           </Link>
           {me && (
             <div className="flex shrink-0 items-center gap-2">
               <TopNav />
-              <form action={signOut} className="flex items-center sm:ml-2 sm:border-l sm:border-white/20 sm:pl-3">
-                <span className="hidden text-sm text-white/80 md:inline">{me.full_name}</span>
+              <form action={signOut} className="flex items-center sm:ml-2 sm:border-l sm:border-divider sm:pl-3">
+                <span className="hidden text-sm text-muted md:inline">{me.full_name}</span>
                 <button
                   type="submit"
-                  className="ml-1 flex min-h-11 items-center rounded-lg px-2 text-sm font-medium text-white/85 transition-colors hover:bg-white/10 hover:text-white"
+                  className="ml-1 flex min-h-11 items-center rounded-full px-3 text-sm font-medium text-muted transition-colors hover:bg-accent-100 hover:text-foreground"
                 >
                   Sign out
                 </button>
@@ -69,7 +87,7 @@ async function Header() {
   );
 }
 
-// The app icon (app/icon.svg) without its navy tile: a green circle with a check.
+// The app icon (app/icon.svg) without its charcoal tile: an olive circle with a check.
 // Shown beside the product name when signed out.
 function BrandMark() {
   return (
@@ -89,9 +107,9 @@ function BrandMark() {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className="h-full antialiased">
+    <html lang="en" className={`${hanken.variable} ${instrument.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col">
-        <Suspense fallback={<header className="min-h-14 bg-accent-900" />}>
+        <Suspense fallback={<header className="min-h-14 border-b border-divider bg-background" />}>
           <Header />
         </Suspense>
         <main className="mx-auto w-full max-w-4xl flex-1 px-4 pt-6 pb-10">{children}</main>

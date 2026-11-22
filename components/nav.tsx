@@ -15,7 +15,7 @@ function isActive(pathname: string, href: string) {
   return href === "/" ? pathname === "/" : pathname.startsWith(href);
 }
 
-// Desktop: links in the header.
+// Desktop: muted text links in the header; the current page is a charcoal pill.
 export function TopNav() {
   const pathname = usePathname();
   return (
@@ -28,11 +28,17 @@ export function TopNav() {
               <Link
                 href={t.href}
                 aria-current={active ? "page" : undefined}
-                className={`flex min-h-11 items-center rounded-lg px-3 text-sm font-medium transition-colors ${
-                  active ? "bg-white/15 text-white" : "text-white/75 hover:bg-white/10 hover:text-white"
-                }`}
+                className="group flex min-h-11 items-center rounded-full text-sm font-medium"
               >
-                {t.label}
+                <span
+                  className={`flex h-9 items-center rounded-full px-3.5 transition-colors ${
+                    active
+                      ? "bg-accent-800 text-white"
+                      : "text-muted group-hover:bg-accent-100 group-hover:text-foreground"
+                  }`}
+                >
+                  {t.label}
+                </span>
               </Link>
             </li>
           );
@@ -43,6 +49,7 @@ export function TopNav() {
 }
 
 // Phone: a tab bar fixed to the bottom of the screen, where thumbs reach.
+// The current page is a charcoal pill with white icon and label.
 export function TabBar() {
   const pathname = usePathname();
   return (
@@ -51,7 +58,7 @@ export function TabBar() {
       <div aria-hidden className="order-last h-[calc(4rem+env(safe-area-inset-bottom))] shrink-0 sm:hidden" />
       <nav
         aria-label="Main"
-        className="fixed inset-x-0 bottom-0 z-30 border-t border-divider bg-surface/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-sm sm:hidden"
+        className="fixed inset-x-0 bottom-0 z-30 border-t border-divider bg-surface pb-[env(safe-area-inset-bottom)] sm:hidden"
       >
         <ul className="grid h-16 grid-cols-4">
           {TABS.map((t) => {
@@ -62,18 +69,16 @@ export function TabBar() {
                 <Link
                   href={t.href}
                   aria-current={active ? "page" : undefined}
-                  className={`flex h-full flex-col items-center justify-center gap-0.5 text-xs transition-colors ${
-                    active ? "font-semibold text-accent-800" : "font-medium text-muted"
-                  }`}
+                  className="flex h-full items-center justify-center px-1 text-xs"
                 >
                   <span
-                    className={`flex h-7 w-12 items-center justify-center rounded-full transition-colors ${
-                      active ? "bg-accent-200" : ""
+                    className={`flex h-12 w-full flex-col items-center justify-center gap-0.5 rounded-full transition-colors ${
+                      active ? "bg-accent-800 font-semibold text-white" : "font-medium text-muted"
                     }`}
                   >
                     <Icon />
+                    {t.label}
                   </span>
-                  {t.label}
                 </Link>
               </li>
             );

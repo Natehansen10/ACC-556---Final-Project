@@ -9,6 +9,7 @@ import {
   ProgressBar,
   SegmentedNav,
   buttonClass,
+  titleClass,
 } from "@/components/ui";
 import { formatMonth, formatShortMonth, pct } from "@/lib/format";
 import { requireMember } from "@/lib/auth";
@@ -86,8 +87,8 @@ export default async function LeaderboardPage({
       <Card>
         <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h2 className="text-lg font-semibold">{formatMonth(month)}</h2>
-            <p className="mt-0.5 text-sm text-muted text-pretty">
+            <h2 className={titleClass}>{formatMonth(month)}</h2>
+            <p className="mt-1 text-sm text-muted text-pretty">
               {prize.awarded_at
                 ? `Prize awarded ${prize.awarded_at} to ${winners.join(" and ") || "no one"}.`
                 : prize.month_has_ended
@@ -142,7 +143,7 @@ export default async function LeaderboardPage({
                           ? "bg-success-600 text-white"
                           : r.place === 1
                             ? "bg-success-100 text-success-700"
-                            : "bg-neutral-200 text-foreground"
+                            : "bg-accent-200 text-foreground"
                       }`}
                     >
                       <span className="sr-only">Place </span>

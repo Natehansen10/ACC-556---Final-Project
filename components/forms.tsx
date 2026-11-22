@@ -75,23 +75,23 @@ export function CheckRow({
         type="submit"
         disabled={pending}
         aria-pressed={shown}
-        className={`group flex min-h-16 w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition-colors duration-200 ${
+        className={`group flex min-h-16 w-full items-center gap-3 rounded-xl border-[1.5px] px-3 py-2.5 text-left transition-colors duration-200 ${
           shown
-            ? "border-success-500/40 bg-success-100"
-            : "border-accent-600/50 bg-surface hover:border-accent-700 hover:bg-accent-100"
+            ? "border-transparent bg-success-100"
+            : "border-divider bg-background hover:border-accent-500 hover:bg-accent-100"
         }`}
       >
         <span
           className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 transition-colors duration-200 ${
             shown
               ? "border-success-600 bg-success-600 text-white"
-              : "border-accent-600 bg-white text-transparent group-hover:text-accent-200"
+              : "border-accent-700 bg-surface text-transparent group-hover:text-accent-200"
           }`}
         >
           <CheckIcon className={`h-5 w-5 ${touched && shown ? "check-pop" : ""}`} />
         </span>
         <span className="min-w-0 flex-1">
-          <span className="block font-semibold text-pretty break-words">{title}</span>
+          <span className={`block font-semibold text-pretty break-words ${shown ? "text-success-700" : ""}`}>{title}</span>
           <span className="block text-sm text-muted tabular-nums">{detail}</span>
         </span>
         <span

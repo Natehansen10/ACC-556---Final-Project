@@ -1,6 +1,6 @@
 import { MonthBars, StreakMeters, WeekdayColumns, WeeklyMultiples, type MonthProgress } from "@/components/charts";
 import { PersonSelect } from "@/components/forms";
-import { Card, ChevronIcon, EmptyState, PageHeader, SegmentedNav, summaryClass } from "@/components/ui";
+import { Card, ChevronIcon, EmptyState, PageHeader, SegmentedNav, summaryClass, titleClass } from "@/components/ui";
 import { requireMember } from "@/lib/auth";
 import { formatShortMonth } from "@/lib/format";
 import { getFamilyMembers } from "@/lib/queries";
@@ -74,7 +74,7 @@ export default async function TrendsPage({
 
       <Card>
         <div className="mb-4">
-          <h2 className="text-lg font-semibold">{report.title}</h2>
+          <h2 className={titleClass}>{report.title}</h2>
           <p className="mt-1 max-w-[60ch] text-sm text-muted text-pretty">{report.question}</p>
           {report.chart === "monthBars" && rows.length > 0 && (
             <p className="mt-2 max-w-[60ch] text-sm text-pretty">

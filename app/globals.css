@@ -1,30 +1,33 @@
 @import "tailwindcss";
 
-/* Neutral grays, one navy accent, and green reserved for "done" / "won".
-   Every pair used for text is checked for WCAG AA (4.5:1). */
+/* "The Oatmeal Journal": warm oatmeal page, cream cards, one charcoal action color, and
+   olive reserved for "done" / "won". Adapted from design/DESIGN.reference.md.
+   Every pair used for text is checked for WCAG AA (4.5:1); ratios are listed in DESIGN.md. */
 :root {
-  --background: #f2f2f3;
-  --foreground: #1d1f20;
-  --muted: #5d5d60; /* 5.9:1 on the page, 6.6:1 on white */
-  --faint: #8c8d90; /* non-text marks only (missed-day dots) */
-  --surface: #ffffff;
-  --divider: color-mix(in srgb, #1d1f20 14%, transparent);
-  --focus: #416180; /* focus ring, 6.5:1 on white */
+  --background: #f7f1e8; /* page: warm oatmeal */
+  --foreground: #1c1b1a; /* ink, 15.3:1 on the page */
+  --muted: #5e5a54; /* 6.1:1 on the page, 6.7:1 on surface */
+  --faint: #878279; /* non-text marks only (missed-day dots): 3.4:1 page, 3.8:1 surface */
+  --surface: #fffdf8; /* cards */
+  --divider: #e1dcd3; /* hairlines */
+  --track: #ece4d6; /* segmented switcher track */
+  --upcoming: #cfc9bf; /* dashed ring for days still to come, dashed outlines */
+  --focus: #4a4741; /* focus ring, 8.2:1 on the page */
 
   /* Strava, darkened from the brand orange so white text passes AA (5.1:1). */
   --strava: #c93b00;
   --strava-ink: #b33400;
 
-  /* Trends charts. Checked with the dataviz palette validator against the white card:
-     one series hue, its lighter track step, and an ordinal (oldest -> newest) month ramp. */
-  --viz-1: #2a78d6;
-  --viz-track: #cde2fb;
-  --viz-track-edge: #597ea3;
-  --viz-month-1: #86b6ef;
-  --viz-month-2: #3987e5;
-  --viz-month-3: #1c5cab;
-  --viz-grid: #e1e0d9;
-  --viz-ink: #1d1f20;
+  /* Trends charts: warm ochre, kept apart from the olive "done" color.
+     One series hue, its lighter track step, and an ordinal (oldest -> newest) month ramp. */
+  --viz-1: #9a6417; /* 4.9:1 on surface */
+  --viz-track: #efe0c2;
+  --viz-track-edge: #9a6417;
+  --viz-month-1: #b8893f;
+  --viz-month-2: #9a6417;
+  --viz-month-3: #6b4510;
+  --viz-grid: #e1dcd3;
+  --viz-ink: #1c1b1a;
 }
 
 @theme inline {
@@ -34,25 +37,31 @@
   --color-faint: var(--faint);
   --color-surface: var(--surface);
   --color-divider: var(--divider);
+  --color-track: var(--track);
+  --color-upcoming: var(--upcoming);
   --color-focus: var(--focus);
   --color-strava: var(--strava);
   --color-strava-ink: var(--strava-ink);
 
-  --color-accent-100: #eef6ff;
-  --color-accent-200: #d6ebff;
-  --color-accent-500: #749dc4;
-  --color-accent-600: #597ea3;
-  --color-accent-700: #416180;
-  --color-accent-800: #2c455d;
-  --color-accent-900: #1d2d3d;
+  /* Action ramp, "Charcoal and Stone". The only filled action color. */
+  --color-accent-100: #efe9de; /* quiet-button hover */
+  --color-accent-200: #e6dfd3; /* progress track, neutral chips, selection */
+  --color-accent-500: #a8a5a0;
+  --color-accent-600: #6b665e;
+  --color-accent-700: #4a4741; /* quiet buttons, links, focus, today ring */
+  --color-accent-800: #222428; /* primary buttons, active tab pill; white text 15.5:1 */
+  --color-accent-900: #19191c;
 
-  --color-success-100: #e3f2e8;
-  --color-success-500: #3f8f5f;
-  --color-success-600: #2f7a4d; /* fills behind white checks, 5.2:1 */
-  --color-success-700: #2c6644;
+  /* Done ramp, "Olive". Completed check-ins, met targets, positive change, prizes. */
+  --color-success-100: #eef0e4; /* done row tint, "All done today" chip */
+  --color-success-500: #5c6f5d; /* brand mark */
+  --color-success-600: #4f6150; /* fills behind white checks, 6.65:1 */
+  --color-success-700: #34432f; /* text on the tint, 9.2:1 */
 
-  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+  /* Hanken Grotesk and Instrument Serif are loaded with next/font in app/layout.tsx. */
+  --font-sans: var(--font-hanken), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
     "Helvetica Neue", Arial, sans-serif;
+  --font-display: var(--font-instrument), "Iowan Old Style", "Palatino Linotype", Georgia, serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
@@ -63,6 +72,13 @@ body {
   color: var(--foreground);
   font-family: var(--font-sans);
   -webkit-tap-highlight-color: transparent;
+}
+
+/* Display serif: titles only, 20px and up. One weight (400); never faked bold or italic.
+   Unlayered on purpose, so it wins over any font-weight utility on the same element. */
+.font-display {
+  font-weight: 400;
+  font-synthesis: none;
 }
 
 /* Browser surfaces carry the palette too. */
