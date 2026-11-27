@@ -115,7 +115,7 @@ export default async function TodayPage({
           <h2 id="family-heading" className={titleClass}>
             Family
           </h2>
-          <Card className="!p-0">
+          <Card className="overflow-hidden !p-0">
             <ul className="divide-y divide-divider">
               {others.map((m) => {
                 const goals = goalsOf(m.id);
@@ -330,7 +330,7 @@ async function StravaPanel({ memberId, hasGoals }: { memberId: string; hasGoals:
         {/* A plain link, not a form: the route redirects to strava.com. */}
         <a
           href="/strava/connect"
-          className={`inline-flex min-h-11 items-center rounded-full px-4 text-sm font-semibold transition-colors ${
+          className={`inline-flex min-h-11 items-center rounded-full px-4 text-sm font-semibold press ${
             hasGoals
               ? "bg-strava text-white hover:bg-strava-ink"
               : "border border-strava/50 text-strava-ink hover:bg-strava/10"
