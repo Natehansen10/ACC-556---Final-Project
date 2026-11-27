@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { SlidingPill } from "./sliding-pill";
 
 // Serif titles (Instrument Serif, never bold, never under 20px).
 export const pageTitleClass =
@@ -7,6 +8,8 @@ export const pageTitleClass =
 export const titleClass = "font-display text-2xl leading-[1.15] text-balance sm:text-[1.625rem]";
 
 // Flat: a hairline border on the cream surface, no shadow. Never nest cards.
+// Concentric corners: outer radius = inner radius + padding. The card's padding is 16px
+// (20px from 640px) and what sits inside it is 12px, so the card is 28px (32px).
 export function Card({
   children,
   className = "",
@@ -16,7 +19,7 @@ export function Card({
 }) {
   return (
     <section
-      className={`rounded-lg border border-divider bg-surface p-4 sm:p-5 ${className}`}
+      className={`rounded-[28px] border border-divider bg-surface p-4 sm:rounded-[32px] sm:p-5 ${className}`}
     >
       {children}
     </section>
@@ -61,7 +64,7 @@ export function EmptyState({
   action?: ReactNode;
 }) {
   return (
-    <div className="flex flex-col items-center rounded-lg border border-dashed border-upcoming px-6 py-8 text-center">
+    <div className="flex flex-col items-center rounded-xl border border-dashed border-upcoming px-6 py-8 text-center">
       <p className="font-semibold">{title}</p>
       {description && <p className="mt-1 max-w-sm text-sm text-muted text-pretty">{description}</p>}
       {action && <div className="mt-4">{action}</div>}
@@ -74,7 +77,7 @@ export function Alert({ ok, children }: { ok: boolean; children: ReactNode }) {
     <p
       role={ok ? "status" : "alert"}
       aria-live={ok ? "polite" : "assertive"}
-      className={`rounded-lg border px-3 py-2 text-sm ${
+      className={`rounded-xl border px-3 py-2 text-sm ${
         ok
           ? "border-success-500/40 bg-success-100 text-success-700"
           : "border-red-300 bg-red-50 text-red-800"
@@ -123,6 +126,12 @@ export function ProgressBar({
   );
 }
 
+// Placeholder block for loading screens (app/**/loading.tsx). Give it a size and a radius.
+// The shimmer is CSS (.sk in globals.css) and is off under reduced motion.
+export function Skeleton({ className = "" }: { className?: string }) {
+  return <span aria-hidden className={`sk ${className}`} />;
+}
+
 export function CheckIcon({ className = "h-4 w-4" }: { className?: string }) {
   return (
     <svg
@@ -158,16 +167,17 @@ export function ChevronIcon({ className = "h-4 w-4" }: { className?: string }) {
 }
 
 // All controls are at least 44px tall (min-h-11) for phones. Buttons are pills.
+// `press` (globals.css) dips the button to 97% while it is held down.
 // Primary is the one filled action color (charcoal), 48px tall.
 export const buttonClass =
-  "inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-accent-800 px-5 text-sm font-semibold text-white transition-colors hover:bg-accent-900 disabled:cursor-not-allowed disabled:opacity-60";
+  "inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-accent-800 px-5 text-sm font-semibold text-white press hover:bg-accent-900 disabled:cursor-not-allowed disabled:opacity-60";
 
 export const secondaryButtonClass =
-  "inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-accent-700 bg-transparent px-4 text-sm font-medium text-foreground transition-colors hover:bg-accent-100 disabled:cursor-not-allowed disabled:opacity-60";
+  "inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-accent-700 bg-transparent px-4 text-sm font-medium text-foreground press hover:bg-accent-100 disabled:cursor-not-allowed disabled:opacity-60";
 
 // Text-only action (e.g. "Sign out", "Undo yesterday"), still a 44px tap target.
 export const quietButtonClass =
-  "inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full px-3 text-sm font-medium text-accent-700 transition-colors hover:bg-accent-100 disabled:cursor-not-allowed disabled:opacity-60";
+  "inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full px-3 text-sm font-medium text-accent-700 press hover:bg-accent-100 disabled:cursor-not-allowed disabled:opacity-60";
 
 // 16px text on phones so iOS doesn't zoom in when the field is focused.
 export const inputClass =
@@ -179,6 +189,7 @@ export const summaryClass =
 
 // One-of-several switcher (report, month): a pill track with pill segments. The active
 // segment is a surface step with a hairline, not a shadow. Links, so every choice is a shareable URL.
+// One cream pill (SlidingPill, the only client part) slides to the active segment.
 export function SegmentedNav({
   items,
   label,
@@ -190,27 +201,33 @@ export function SegmentedNav({
 }) {
   return (
     <nav aria-label={label}>
-      <ul
-        className={`gap-1 rounded-full bg-track p-1 ${columns ? "grid" : "flex flex-wrap"}`}
-        style={columns ? { gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` } : undefined}
-      >
-        {items.map((item) => (
-          <li key={item.href} className={columns ? "min-w-0" : "flex-1"}>
-            <Link
-              href={item.href}
-              aria-current={item.active ? "page" : undefined}
-              scroll={false}
-              className={`flex min-h-11 items-center justify-center rounded-full border px-2 text-center text-sm whitespace-nowrap transition-colors ${
-                item.active
-                  ? "border-divider bg-surface font-semibold text-foreground"
-                  : "border-transparent font-medium text-muted hover:bg-surface/60 hover:text-foreground"
-              }`}
-            >
-              {item.label}
-            </Link>
-          </li>
-        ))}
-      </ul>
+      <div className="group/pill relative isolate rounded-[26px] bg-track">
+        <SlidingPill
+          watch={items.find((i) => i.active)?.href ?? ""}
+          className="rounded-full border border-divider bg-surface"
+        />
+        <ul
+          className={`gap-1 p-1 ${columns ? "grid" : "flex flex-wrap"}`}
+          style={columns ? { gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` } : undefined}
+        >
+          {items.map((item) => (
+            <li key={item.href} className={columns ? "min-w-0" : "flex-1"}>
+              <Link
+                href={item.href}
+                aria-current={item.active ? "page" : undefined}
+                scroll={false}
+                className={`press flex min-h-11 items-center justify-center rounded-full border px-2 text-center text-sm whitespace-nowrap ${
+                  item.active
+                    ? "border-divider bg-surface font-semibold text-foreground group-data-[ready]/pill:border-transparent group-data-[ready]/pill:bg-transparent"
+                    : "border-transparent font-medium text-muted hover:bg-surface/60 hover:text-foreground"
+                }`}
+              >
+                {item.label}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </div>
     </nav>
   );
 }

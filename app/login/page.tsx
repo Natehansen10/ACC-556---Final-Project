@@ -111,7 +111,7 @@ function ExampleBoard() {
   );
 }
 
-// Same marks as DayDots on Today (app/page.tsx).
+// Same marks as DayDots on Today (app/(today)/page.tsx).
 function Dot({ mark }: { mark: Mark }) {
   return (
     <span className="flex h-6 w-6 items-center justify-center">
