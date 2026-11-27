@@ -164,16 +164,17 @@ export function ChevronIcon({ className = "h-4 w-4" }: { className?: string }) {
 }
 
 // All controls are at least 44px tall (min-h-11) for phones. Buttons are pills.
+// `press` (globals.css) dips the button to 97% while it is held down.
 // Primary is the one filled action color (charcoal), 48px tall.
 export const buttonClass =
-  "inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-accent-800 px-5 text-sm font-semibold text-white transition-colors hover:bg-accent-900 disabled:cursor-not-allowed disabled:opacity-60";
+  "inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-accent-800 px-5 text-sm font-semibold text-white press hover:bg-accent-900 disabled:cursor-not-allowed disabled:opacity-60";
 
 export const secondaryButtonClass =
-  "inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-accent-700 bg-transparent px-4 text-sm font-medium text-foreground transition-colors hover:bg-accent-100 disabled:cursor-not-allowed disabled:opacity-60";
+  "inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-accent-700 bg-transparent px-4 text-sm font-medium text-foreground press hover:bg-accent-100 disabled:cursor-not-allowed disabled:opacity-60";
 
 // Text-only action (e.g. "Sign out", "Undo yesterday"), still a 44px tap target.
 export const quietButtonClass =
-  "inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full px-3 text-sm font-medium text-accent-700 transition-colors hover:bg-accent-100 disabled:cursor-not-allowed disabled:opacity-60";
+  "inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full px-3 text-sm font-medium text-accent-700 press hover:bg-accent-100 disabled:cursor-not-allowed disabled:opacity-60";
 
 // 16px text on phones so iOS doesn't zoom in when the field is focused.
 export const inputClass =

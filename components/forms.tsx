@@ -75,7 +75,7 @@ export function CheckRow({
         type="submit"
         disabled={pending}
         aria-pressed={shown}
-        className={`group flex min-h-16 w-full items-center gap-3 rounded-xl border-[1.5px] px-3 py-2.5 text-left transition-colors duration-200 ${
+        className={`group flex min-h-16 w-full items-center gap-3 rounded-xl border-[1.5px] px-3 py-2.5 text-left press-lg ${
           shown
             ? "border-transparent bg-success-100"
             : "border-divider bg-background hover:border-accent-500 hover:bg-accent-100"

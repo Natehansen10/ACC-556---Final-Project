@@ -64,9 +64,33 @@
   --font-display: var(--font-instrument), "Iowan Old Style", "Palatino Linotype", Georgia, serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 
+  /* Motion (DESIGN.md, Motion): expo for presses and pops. */
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+/* Press feedback: a control dips a little while it is held down. Colors keep their own
+   quick transition. Disabled controls don't move; reduced motion turns the dip off (below). */
+@utility press {
+  transition:
+    transform 200ms var(--ease-out-expo),
+    color 150ms,
+    background-color 150ms,
+    border-color 150ms;
+  &:active:not(:disabled) {
+    transform: scale(0.97);
+  }
+}
+/* Large controls (the 64px check-in row) dip less. */
+@utility press-lg {
+  transition:
+    transform 200ms var(--ease-out-expo),
+    color 200ms,
+    background-color 200ms,
+    border-color 200ms;
+  &:active:not(:disabled) {
+    transform: scale(0.98);
+  }
+}
 /* Skeleton: a placeholder block shown while a page loads (components/ui.tsx, Skeleton).
    A warm highlight sweeps across it; only the highlight's transform animates. */
 @layer components {
@@ -154,6 +178,11 @@ summary::-webkit-details-marker {
   .sk::after {
     display: none;
     animation: none;
+  }
+  /* No press dip. */
+  .press:active:not(:disabled),
+  .press-lg:active:not(:disabled) {
+    transform: none;
   }
   *,
   *::before,
