@@ -64,8 +64,9 @@
   --font-display: var(--font-instrument), "Iowan Old Style", "Palatino Linotype", Georgia, serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 
-  /* Motion (DESIGN.md, Motion): expo for presses and pops. */
+  /* Motion (DESIGN.md, Motion): two easings. Expo for presses and pops, spring for sliding pills. */
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 /* Press feedback: a control dips a little while it is held down. Colors keep their own
@@ -91,6 +92,12 @@
     transform: scale(0.98);
   }
 }
+/* The sliding pill behind the current tab or segment. Only transform moves. */
+@utility pill-slide {
+  transition: transform 450ms var(--ease-spring);
+  will-change: transform;
+}
+
 /* Skeleton: a placeholder block shown while a page loads (components/ui.tsx, Skeleton).
    A warm highlight sweeps across it; only the highlight's transform animates. */
 @layer components {

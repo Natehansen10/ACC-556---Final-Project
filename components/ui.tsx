@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { SlidingPill } from "./sliding-pill";
 
 // Serif titles (Instrument Serif, never bold, never under 20px).
 export const pageTitleClass =
@@ -186,6 +187,7 @@ export const summaryClass =
 
 // One-of-several switcher (report, month): a pill track with pill segments. The active
 // segment is a surface step with a hairline, not a shadow. Links, so every choice is a shareable URL.
+// One cream pill (SlidingPill, the only client part) slides to the active segment.
 export function SegmentedNav({
   items,
   label,
@@ -197,27 +199,33 @@ export function SegmentedNav({
 }) {
   return (
     <nav aria-label={label}>
-      <ul
-        className={`gap-1 rounded-full bg-track p-1 ${columns ? "grid" : "flex flex-wrap"}`}
-        style={columns ? { gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` } : undefined}
-      >
-        {items.map((item) => (
-          <li key={item.href} className={columns ? "min-w-0" : "flex-1"}>
-            <Link
-              href={item.href}
-              aria-current={item.active ? "page" : undefined}
-              scroll={false}
-              className={`flex min-h-11 items-center justify-center rounded-full border px-2 text-center text-sm whitespace-nowrap transition-colors ${
-                item.active
-                  ? "border-divider bg-surface font-semibold text-foreground"
-                  : "border-transparent font-medium text-muted hover:bg-surface/60 hover:text-foreground"
-              }`}
-            >
-              {item.label}
-            </Link>
-          </li>
-        ))}
-      </ul>
+      <div className="group/pill relative isolate rounded-[26px] bg-track">
+        <SlidingPill
+          watch={items.find((i) => i.active)?.href ?? ""}
+          className="rounded-full border border-divider bg-surface"
+        />
+        <ul
+          className={`gap-1 p-1 ${columns ? "grid" : "flex flex-wrap"}`}
+          style={columns ? { gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` } : undefined}
+        >
+          {items.map((item) => (
+            <li key={item.href} className={columns ? "min-w-0" : "flex-1"}>
+              <Link
+                href={item.href}
+                aria-current={item.active ? "page" : undefined}
+                scroll={false}
+                className={`press flex min-h-11 items-center justify-center rounded-full border px-2 text-center text-sm whitespace-nowrap ${
+                  item.active
+                    ? "border-divider bg-surface font-semibold text-foreground group-data-[ready]/pill:border-transparent group-data-[ready]/pill:bg-transparent"
+                    : "border-transparent font-medium text-muted hover:bg-surface/60 hover:text-foreground"
+                }`}
+              >
+                {item.label}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </div>
     </nav>
   );
 }
