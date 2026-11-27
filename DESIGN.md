@@ -68,6 +68,8 @@ rounded:
   md: "6px"
   lg: "8px"
   xl: "12px"
+  card: "28px"
+  card-lg: "32px"
   full: "9999px"
 spacing:
   xs: "4px"
@@ -101,7 +103,7 @@ components:
   card:
     backgroundColor: "{colors.surface}"
     borderColor: "{colors.divider}"
-    rounded: "{rounded.lg}"
+    rounded: "{rounded.card}"
     padding: "16px"
   input:
     backgroundColor: "{colors.surface}"
@@ -216,34 +218,60 @@ Single centered column, max width 56rem, 16px side gutter. Sections stack with 2
 
 Flat. Depth comes from surface color steps (oatmeal page, cream card, then a tint) and 1px hairlines. Cards have a hairline border and no shadow. The active segment is a surface step with a hairline, not a lift. Tooltips are the one exception: a single soft warm shadow (`0 4px 12px rgb(28 27 26 / 0.08)`). No nested cards.
 
+## Motion
+
+Motion says "that worked" and "you are here". It never decorates, and nothing moves on page load. The allowed list:
+
+| Motion | Where | Duration | Easing |
+| --- | --- | --- | --- |
+| Press | Buttons, the check-in row, nav links, segments dip to 97% while held (98% for the 64px check-in row). Disabled controls don't move. | 200ms | `--ease-out-expo` |
+| Sliding pill | One pill slides between tabs (TabBar, TopNav) and segments (SegmentedNav). It slides on tap, is placed without animation on first render and on resize, and retargets from wherever it is on rapid taps. | 450ms | `--ease-spring` |
+| Skeleton shimmer | A warm highlight (`--surface`) sweeps across `--track` blocks on the loading screens. | 1400ms loop | ease-in-out |
+| Check-in pop | The check mark lands after a tap. | 420ms | `--ease-out-expo` |
+| Color changes | Hover, active tab label, done state. | 150 to 200ms | default |
+
+- **Easing tokens** (in `app/globals.css`): `--ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1)` for presses and pops, `--ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1)` for sliding pills (it overshoots a little, then settles).
+- **Durations:** 150 to 450ms for anything a tap causes. The skeleton shimmer is the one loop.
+- **Only `transform` and `opacity` animate** (plus plain color changes). Never width, height, top, left, or margin. The measured pills set their width in one step and slide with `transform`.
+- **Reduced motion** (`prefers-reduced-motion: reduce`): no press dip, no slide (the pill jumps to its place), no shimmer (skeletons are a still fill), no check-in pop. The global rule in `globals.css` sets every transition to 0ms.
+- Adding a new motion means adding a row to this table first.
+
+### Loading screens (skeletons)
+- Today, Goals, Leaderboard, and Trends each have a `loading.tsx` that shows the instant a tab is tapped. It copies the page's layout: the real page title, the same cards, the same row heights (66px check-in rows with day dots under them, family rows, ranked rows, the segmented track and a chart block), so the page does not jump when the data arrives.
+- Blocks are `--track` with the shimmer, `aria-hidden`. The screen is one `role="status"` region that reads "Loading".
+
 ## Shapes
 
-Full rounding on buttons, segments, chips, day dots, place badges, progress bars, and the nav pills. 8px on cards, alerts, and empty states. 12px on inputs and the check-in button.
+Full rounding on buttons, segments, chips, day dots, place badges, progress bars, and the nav pills. 28px on cards (32px from 640px). 12px on everything that sits inside a card: inputs, the check-in button, alerts, empty states, the "not running" row, and the "Change this goal" panel.
+
+### Named Rules
+**The Concentric Rule.** When a rounded shape sits inside another with padding between them, outer radius = inner radius + padding. Cards have 16px of padding (20px from 640px) around 12px shapes, so cards are 28px (32px). The segmented track is 26px: a 22px pill plus 4px of padding. A card with no padding (the Family list) keeps the card radius and clips its dividers with `overflow-hidden`. Pills (`rounded-full`) are left alone.
 
 ## Components
 
 ### Header and navigation
 - Header: page color with a 1px hairline under it. Family name in Instrument Serif, ink. "Sign out" in muted sans, 14px/500.
-- Desktop (TopNav): muted text links; the current page is a charcoal pill with white text. Each link is a 44px target.
-- Phone (TabBar): surface background, hairline on top, 64px plus the safe-area inset. The current tab is a charcoal pill holding its white icon and label.
+- Desktop (TopNav): muted text links; the current page is a charcoal pill with white text. Each link is a 44px target. One pill slides between the links (it measures the current link, since the links have different widths).
+- Phone (TabBar): surface background, hairline on top, 64px plus the safe-area inset. The current tab is a charcoal pill holding its white icon and label. One pill, a quarter of the bar wide, slides between the four tabs; the icon and label turn white over 200ms.
+- Installed to the home screen, the header and tab bar pad themselves by the safe-area insets.
 
 ### Check-in button (CheckRow)
 - One per goal on Today. 64px tall, full width, 12px radius. 40px circle on the left, title and frequency in the middle, "Tap when done" or "Done / tap to undo" on the right.
 - Idle: page-color fill, 1.5px hairline border, circle with a 2px stone ring. Done: olive tint fill, no border, circle filled olive with a white check, title and status in dark olive.
-- Flips the moment it is tapped (optimistic), then the check lands with a 420ms ease-out "pop". The pop never plays on page load and is off under reduced motion.
+- Dips to 98% while held. Flips the moment it is tapped (optimistic), then the check lands with a 420ms ease-out "pop". The pop never plays on page load and is off under reduced motion.
 - `aria-pressed` carries the state.
 
 ### Day dots
 - This week, Sunday to Saturday, weekday label above (today labeled "Today"). Done: 24px olive circle with a white check. Today not yet: open 2px stone ring. Missed: faint 8px dot. Later this week: 1px dashed ring (#cfc9bf). Not running: blank. Each day has screen-reader text. The count beside it is "x of y this week".
 
 ### Buttons
-- All pills. **Primary:** charcoal fill, white text, 48px tall. **Secondary:** transparent with a 1px stone border, ink text, 44px. **Quiet:** stone text only, cream hover, still 44px tall (e.g. "Mark yesterday done").
+- All pills. Each dips to 97% while held (see Motion). **Primary:** charcoal fill, white text, 48px tall. **Secondary:** transparent with a 1px stone border, ink text, 44px. **Quiet:** stone text only, cream hover, still 44px tall (e.g. "Mark yesterday done").
 
 ### Inputs
 - 12px radius, 1px stone border on the cream surface, 44px tall, 16px text on phones. Focus: ink border plus the 2px focus outline.
 
 ### Segmented switcher (SegmentedNav)
-- Report and month pickers. A pill track (#ece4d6) with pill segments; the active one is cream with a hairline border and `aria-current`. Links, so every view is a shareable URL.
+- Report and month pickers. A pill track (#ece4d6) with pill segments; the active one is cream with a hairline border and `aria-current`. Links, so every view is a shareable URL. One cream pill slides to the active segment the moment it is tapped.
 
 ### Chips and badges
 - Fully rounded. Olive tint with dark olive text for "All done today" and "Prize winner". The prize winner's place badge is solid olive with a white number; first place before the prize is awarded is the olive tint; other places and neutral tags ("Ended", "Example") are stone-200 with ink or muted text.
@@ -264,6 +292,7 @@ Full rounding on buttons, segments, chips, day dots, place badges, progress bars
 
 ### Icons and link card
 - `app/icon.svg`: charcoal tile (#222428), olive circle (#5c6f5d), white check. `app/apple-icon.png` and `app/favicon.ico` are rendered from it. `app/opengraph-image.png` is a 1200x630 screenshot of `design/link-card.html`.
+- Install to home screen: `app/manifest.ts` (served as `/manifest.webmanifest`) names the app "Family Health Tracker" (short name "Family Health"), opens it standalone, and uses the page color #f7f1e8 for the splash and theme. Its icons are in `public/icons`, rendered from `app/icon.svg`: `icon-192.png`, `icon-512.png`, and `icon-maskable-512.png` (the charcoal fills the whole square and the mark stays inside the middle 80%, so Android can crop it to any shape). `appleWebApp` in `app/layout.tsx` does the same for iPhone. `proxy.ts` lets `.webmanifest` and `.png` load when signed out.
 
 ## Do's and Don'ts
 
@@ -274,5 +303,5 @@ Full rounding on buttons, segments, chips, day dots, place badges, progress bars
 - **Don't** add a second filled action color, or put a shadow on anything but a tooltip.
 - **Don't** add a chart, component, icon, or animation library. Icons are inline SVG on a 24px grid, 1.75 stroke.
 - **Don't** nest cards, or use unicode glyphs as icons.
-- **Don't** add more motion than the check-in pop and simple color transitions.
+- **Don't** add motion that isn't on the allowed list in the Motion section.
 - **Don't** borrow Oura's logo, photos, product names, or blue.
