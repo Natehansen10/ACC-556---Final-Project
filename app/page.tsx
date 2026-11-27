@@ -184,6 +184,7 @@ function MyGoal({
 
   if (!t?.counts) {
     // Ended (or not started) but still inside the 7-day window: show it read-only.
+    // (A goal that is paused right now isn't on the board at all.)
     return (
       <div className="flex flex-col gap-1.5 rounded-xl border border-dashed border-upcoming px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between">
         <div>

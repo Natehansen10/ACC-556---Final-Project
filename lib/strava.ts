@@ -177,6 +177,10 @@ export async function syncStrava(me: CurrentMember, force = false): Promise<Sync
           AND (g.strava_sport_type = 'Any' OR a.sport_type LIKE '%' || g.strava_sport_type)
           AND a.activity_date >= g.start_date
           AND (g.end_date IS NULL OR a.activity_date <= g.end_date)
+          AND NOT EXISTS (SELECT 1 FROM public.goal_pauses gp   -- not while the goal was paused
+                          WHERE gp.goal_id = g.id
+                            AND gp.paused_on <= a.activity_date
+                            AND (gp.resumed_on IS NULL OR gp.resumed_on > a.activity_date))
         ORDER BY g.id, a.activity_date, a.id
         ON CONFLICT DO NOTHING
         RETURNING id
@@ -207,6 +211,10 @@ export async function matchGoalToStrava(memberId: string, goalId: string): Promi
       AND (g.strava_sport_type = 'Any' OR a.sport_type LIKE '%' || g.strava_sport_type)
       AND a.activity_date >= g.start_date
       AND (g.end_date IS NULL OR a.activity_date <= g.end_date)
+      AND NOT EXISTS (SELECT 1 FROM public.goal_pauses gp   -- not while the goal was paused
+                      WHERE gp.goal_id = g.id
+                        AND gp.paused_on <= a.activity_date
+                        AND (gp.resumed_on IS NULL OR gp.resumed_on > a.activity_date))
       AND NOT EXISTS (SELECT 1 FROM public.checkins c WHERE c.strava_activity_id = a.id)
     ORDER BY a.activity_date, a.id
     ON CONFLICT DO NOTHING

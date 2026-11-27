@@ -1,4 +1,4 @@
-import { createGoal, deleteGoal, endGoal, setGoalStrava } from "@/app/actions";
+import { createGoal, deleteGoal, endGoal, pauseGoal, resumeGoal, setGoalStrava } from "@/app/actions";
 import { ActionButton, GoalForm, StravaTypeForm } from "@/components/forms";
 import {
   Card,
@@ -16,7 +16,7 @@ import { getFamilyGoals, getFamilyMembers, getStravaStatus, type FamilyGoal } fr
 import { stravaConfigured } from "@/lib/strava";
 import { stravaTypeLabel } from "@/lib/strava-types";
 
-// Goals: yours first (add, end, delete), then each family member's.
+// Goals: yours first (add, pause, end, delete), then each family member's.
 // Progress is this month: check-ins so far / the month's target from the view.
 export default async function GoalsPage() {
   const me = await requireMember();
@@ -88,7 +88,7 @@ export default async function GoalsPage() {
       )}
 
       <p className="text-sm text-muted text-pretty">
-        Monthly target = times per week × days in the month ÷ 7, rounded. The dark mark on each bar
+        Monthly target = times per week × days in the month ÷ 7, rounded. Paused days are left out. The dark mark on each bar
         is where an on-track goal would be after yesterday.
       </p>
     </div>
@@ -112,6 +112,8 @@ function GoalList({
         const p =
           g.month_target && g.month_target > 0 ? (100 * g.month_checkins) / g.month_target : null;
         const ended = g.end_date !== null;
+        const paused = !ended && g.paused_on !== null;
+        const n = g.total_checkins;
         return (
           <li key={g.id} className="flex flex-col gap-2">
             <div className="min-w-0">
@@ -120,6 +122,11 @@ function GoalList({
                 {ended && (
                   <span className="rounded-full bg-accent-200 px-2 py-0.5 text-xs font-medium text-muted">
                     Ended {formatDay(g.end_date!)}
+                  </span>
+                )}
+                {paused && (
+                  <span className="rounded-full bg-accent-200 px-2 py-0.5 text-xs font-medium text-muted">
+                    Paused {formatDay(g.paused_on!)}
                   </span>
                 )}
               </p>
@@ -131,51 +138,88 @@ function GoalList({
               </p>
             </div>
             {g.month_target === null ? (
-              <p className="text-sm text-muted">Not tracked this month.</p>
+              <p className="text-sm text-muted">
+                {paused ? "Paused, so it isn't tracked this month." : "Not tracked this month."}
+              </p>
             ) : (
               <div className="flex flex-col gap-1.5">
-                <ProgressBar value={p} pace={ended ? undefined : pace} label={`${g.title}, this month`} />
+                <ProgressBar value={p} pace={ended || paused ? undefined : pace} label={`${g.title}, this month`} />
                 <p className="text-sm text-muted tabular-nums">
                   {g.month_checkins} of {g.month_target} check-ins this month
                   {p !== null && p >= 100 && <span className="font-medium text-success-700"> · target reached</span>}
                 </p>
               </div>
             )}
-            {editable && (g.total_checkins === 0 || !ended) && (
+            {editable && (
               <details>
                 <summary className={summaryClass}>
                   <ChevronIcon />
                   Change this goal
                 </summary>
                 <div className="mt-1 flex flex-col gap-4 rounded-lg bg-background p-3">
-                  {stravaConnected && !ended && (
+                  {stravaConnected && !ended && !paused && (
                     <StravaTypeForm action={setGoalStrava.bind(null, g.id)} value={g.strava_sport_type} goalId={g.id} />
                   )}
-                  {g.total_checkins === 0 ? (
-                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                      <p className="text-sm text-muted">No check-ins yet, so you can delete it.</p>
-                      <ActionButton
-                        action={deleteGoal.bind(null, g.id)}
-                        label="Delete goal"
-                        pendingLabel="Deleting…"
-                        align="start"
-                        confirm="Delete this goal? It has no check-ins yet."
-                      />
-                    </div>
-                  ) : (
+                  {paused && (
                     <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                       <p className="text-sm text-muted text-pretty">
-                        Ending keeps its history. It still counts for this month.
+                        Paused. Your check-ins are kept. Resume to track it again from today.
                       </p>
                       <ActionButton
-                        action={endGoal.bind(null, g.id)}
-                        label="End goal"
-                        pendingLabel="Ending…"
+                        action={resumeGoal.bind(null, g.id)}
+                        label="Resume goal"
+                        pendingLabel="Resuming…"
                         align="start"
-                        confirm="End this goal? It still counts for this month and earlier. To change how often, end it and add a new goal."
                       />
                     </div>
                   )}
+                  {!ended && !paused && (
+                    <>
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                        <p className="text-sm text-muted text-pretty">
+                          Pausing keeps your check-ins. Paused days don&apos;t count against you, and you can
+                          resume any time.
+                        </p>
+                        <ActionButton
+                          action={pauseGoal.bind(null, g.id)}
+                          label="Pause goal"
+                          pendingLabel="Pausing…"
+                          align="start"
+                          confirm="Pause this goal? Your check-ins are kept. It leaves Today until you resume it."
+                        />
+                      </div>
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                        <p className="text-sm text-muted text-pretty">
+                          Ending stops it for good and keeps its history. It still counts for this month.
+                        </p>
+                        <ActionButton
+                          action={endGoal.bind(null, g.id)}
+                          label="End goal"
+                          pendingLabel="Ending…"
+                          align="start"
+                          confirm="End this goal? It can't be restarted. It still counts for this month and earlier."
+                        />
+                      </div>
+                    </>
+                  )}
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <p className="text-sm text-muted text-pretty">
+                      {n === 0
+                        ? "Deleting removes the goal."
+                        : `Deleting removes the goal and its ${n} check-in${n === 1 ? "" : "s"}, including from past months.`}
+                    </p>
+                    <ActionButton
+                      action={deleteGoal.bind(null, g.id)}
+                      label="Delete goal"
+                      pendingLabel="Deleting…"
+                      align="start"
+                      confirm={
+                        n === 0
+                          ? "Delete this goal? It has no check-ins yet."
+                          : `Delete this goal and its ${n} check-in${n === 1 ? "" : "s"}? This can't be undone. To keep your progress, pause it instead.`
+                      }
+                    />
+                  </div>
                 </div>
               </details>
             )}
