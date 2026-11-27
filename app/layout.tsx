@@ -27,6 +27,7 @@ const instrument = Instrument_Serif({
 // Link previews (iMessage, Slack, email) read these tags. The icons and the card image are
 // files in app/ (favicon.ico, icon.svg, apple-icon.png, opengraph-image.png) that Next.js links
 // automatically. Their URLs end in .ico/.svg/.png, so proxy.ts lets signed-out link bots fetch them.
+// The install manifest (app/manifest.ts, /manifest.webmanifest) and its icons in public/icons work the same way.
 const description = "Set a goal. Check in each day. Cheer each other on. ACC 556 final project.";
 
 export const metadata: Metadata = {
@@ -41,6 +42,9 @@ export const metadata: Metadata = {
     title: "Family Health Tracker",
     description,
   },
+  // Add to Home Screen on iPhone: opens full screen, without the browser bars (app/manifest.ts
+  // does the same for Android and desktop).
+  appleWebApp: { capable: true, title: "Family Health", statusBarStyle: "default" },
   twitter: {
     card: "summary_large_image",
     title: "Family Health Tracker",
@@ -60,8 +64,8 @@ async function Header() {
   const me = await getCurrentMember().catch(() => null);
   return (
     <>
-      <header className="border-b border-divider bg-background text-foreground">
-        <div className="mx-auto flex min-h-14 max-w-4xl items-center justify-between gap-3 px-4">
+      <header className="border-b border-divider bg-background pt-[env(safe-area-inset-top)] text-foreground">
+        <div className="mx-auto flex min-h-14 max-w-4xl items-center justify-between gap-3 pr-[max(1rem,env(safe-area-inset-right))] pl-[max(1rem,env(safe-area-inset-left))]">
           <Link href="/" className="flex min-w-0 items-center gap-2.5 py-3 font-display text-[1.3rem] leading-tight">
             {!me && <BrandMark />}
             <span className="truncate">{me ? me.family_name : "Family Health Tracker"}</span>
@@ -73,7 +77,7 @@ async function Header() {
                 <span className="hidden text-sm text-muted md:inline">{me.full_name}</span>
                 <button
                   type="submit"
-                  className="ml-1 flex min-h-11 items-center rounded-full px-3 text-sm font-medium text-muted transition-colors hover:bg-accent-100 hover:text-foreground"
+                  className="ml-1 flex min-h-11 items-center rounded-full px-3 text-sm font-medium text-muted press hover:bg-accent-100 hover:text-foreground"
                 >
                   Sign out
                 </button>
