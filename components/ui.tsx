@@ -8,6 +8,8 @@ export const pageTitleClass =
 export const titleClass = "font-display text-2xl leading-[1.15] text-balance sm:text-[1.625rem]";
 
 // Flat: a hairline border on the cream surface, no shadow. Never nest cards.
+// Concentric corners: outer radius = inner radius + padding. The card's padding is 16px
+// (20px from 640px) and what sits inside it is 12px, so the card is 28px (32px).
 export function Card({
   children,
   className = "",
@@ -17,7 +19,7 @@ export function Card({
 }) {
   return (
     <section
-      className={`rounded-lg border border-divider bg-surface p-4 sm:p-5 ${className}`}
+      className={`rounded-[28px] border border-divider bg-surface p-4 sm:rounded-[32px] sm:p-5 ${className}`}
     >
       {children}
     </section>
@@ -62,7 +64,7 @@ export function EmptyState({
   action?: ReactNode;
 }) {
   return (
-    <div className="flex flex-col items-center rounded-lg border border-dashed border-upcoming px-6 py-8 text-center">
+    <div className="flex flex-col items-center rounded-xl border border-dashed border-upcoming px-6 py-8 text-center">
       <p className="font-semibold">{title}</p>
       {description && <p className="mt-1 max-w-sm text-sm text-muted text-pretty">{description}</p>}
       {action && <div className="mt-4">{action}</div>}
@@ -75,7 +77,7 @@ export function Alert({ ok, children }: { ok: boolean; children: ReactNode }) {
     <p
       role={ok ? "status" : "alert"}
       aria-live={ok ? "polite" : "assertive"}
-      className={`rounded-lg border px-3 py-2 text-sm ${
+      className={`rounded-xl border px-3 py-2 text-sm ${
         ok
           ? "border-success-500/40 bg-success-100 text-success-700"
           : "border-red-300 bg-red-50 text-red-800"

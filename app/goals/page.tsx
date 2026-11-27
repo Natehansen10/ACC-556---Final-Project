@@ -67,7 +67,7 @@ export default async function GoalsPage() {
           <h2 id="family-goals" className={titleClass}>
             Family
           </h2>
-          <Card className="!p-0">
+          <Card className="overflow-hidden !p-0">
             <ul className="divide-y divide-divider">
               {others.map((m) => {
                 const theirs = goals.filter((g) => g.user_id === m.id);
@@ -156,7 +156,7 @@ function GoalList({
                   <ChevronIcon />
                   Change this goal
                 </summary>
-                <div className="mt-1 flex flex-col gap-4 rounded-lg bg-background p-3">
+                <div className="mt-1 flex flex-col gap-4 rounded-xl bg-background p-3">
                   {stravaConnected && !ended && !paused && (
                     <StravaTypeForm action={setGoalStrava.bind(null, g.id)} value={g.strava_sport_type} goalId={g.id} />
                   )}
