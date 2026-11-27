@@ -67,6 +67,30 @@
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+/* Skeleton: a placeholder block shown while a page loads (components/ui.tsx, Skeleton).
+   A warm highlight sweeps across it; only the highlight's transform animates. */
+@layer components {
+  .sk {
+    position: relative;
+    display: block;
+    overflow: hidden;
+    background: var(--track);
+  }
+  .sk::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, var(--surface), transparent);
+    transform: translateX(-100%);
+    animation: sk-shimmer 1400ms ease-in-out infinite;
+  }
+}
+@keyframes sk-shimmer {
+  to {
+    transform: translateX(100%);
+  }
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
@@ -124,6 +148,11 @@ summary::-webkit-details-marker {
 }
 @media (prefers-reduced-motion: reduce) {
   .check-pop {
+    animation: none;
+  }
+  /* Skeletons: a still fill, no sweep. */
+  .sk::after {
+    display: none;
     animation: none;
   }
   *,

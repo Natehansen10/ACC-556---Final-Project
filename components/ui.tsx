@@ -123,6 +123,12 @@ export function ProgressBar({
   );
 }
 
+// Placeholder block for loading screens (app/**/loading.tsx). Give it a size and a radius.
+// The shimmer is CSS (.sk in globals.css) and is off under reduced motion.
+export function Skeleton({ className = "" }: { className?: string }) {
+  return <span aria-hidden className={`sk ${className}`} />;
+}
+
 export function CheckIcon({ className = "h-4 w-4" }: { className?: string }) {
   return (
     <svg
